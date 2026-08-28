@@ -1,0 +1,2658 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+
+    <meta charset="UTF-8">
+
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <title>AI Resume Analyzer</title>
+
+    <style>
+
+        /* ==================================================
+           GLOBAL
+        ================================================== */
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            font-family: Arial, sans-serif;
+            background: #f4f7fb;
+            color: #1f2937;
+            min-height: 100vh;
+        }
+
+
+        /* ==================================================
+           HEADER
+        ================================================== */
+
+        header {
+            background: linear-gradient(
+                135deg,
+                #2563eb,
+                #4f46e5
+            );
+
+            color: white;
+            padding: 45px 20px;
+            text-align: center;
+        }
+
+        header h1 {
+            font-size: 40px;
+            margin-bottom: 10px;
+        }
+
+        header p {
+            font-size: 17px;
+            opacity: 0.9;
+        }
+
+
+        /* ==================================================
+           MAIN
+        ================================================== */
+
+        .container {
+            max-width: 1050px;
+            margin: 40px auto;
+            padding: 0 20px;
+        }
+
+
+        /* ==================================================
+           CARD
+        ================================================== */
+
+        .card {
+            background: white;
+            border-radius: 16px;
+            padding: 30px;
+            margin-bottom: 25px;
+
+            box-shadow:
+                0 5px 20px rgba(
+                    0,
+                    0,
+                    0,
+                    0.08
+                );
+        }
+
+        .card h2 {
+            margin-bottom: 20px;
+            color: #111827;
+        }
+
+
+        /* ==================================================
+           INPUT LABEL
+        ================================================== */
+
+        .input-description {
+            color: #64748b;
+            font-size: 13px;
+            margin-top: -12px;
+            margin-bottom: 15px;
+        }
+
+
+        /* ==================================================
+           FILE INPUT
+        ================================================== */
+
+        .file-input {
+            width: 100%;
+            padding: 15px;
+
+            border: 2px dashed #cbd5e1;
+            border-radius: 10px;
+
+            background: #f8fafc;
+            cursor: pointer;
+        }
+
+        .file-input:hover {
+            border-color: #2563eb;
+        }
+
+
+        /* ==================================================
+           TEXTAREA
+        ================================================== */
+
+        textarea {
+            width: 100%;
+            min-height: 180px;
+
+            padding: 15px;
+
+            border: 1px solid #cbd5e1;
+            border-radius: 10px;
+
+            resize: vertical;
+
+            font-size: 15px;
+            font-family: Arial, sans-serif;
+
+            outline: none;
+        }
+
+        textarea:focus {
+            border-color: #2563eb;
+        }
+
+
+        /* ==================================================
+           CHARACTER COUNTER
+        ================================================== */
+
+        .character-counter {
+            text-align: right;
+            margin-top: 6px;
+            font-size: 12px;
+            color: #64748b;
+        }
+
+
+        /* ==================================================
+           ANALYZE BUTTON
+        ================================================== */
+
+        .analyze-button {
+            width: 100%;
+
+            padding: 16px;
+            margin-top: 20px;
+
+            border: none;
+            border-radius: 10px;
+
+            background: #2563eb;
+            color: white;
+
+            font-size: 17px;
+            font-weight: bold;
+
+            cursor: pointer;
+
+            transition: 0.2s;
+        }
+
+        .analyze-button:hover {
+            background: #1d4ed8;
+            transform: translateY(-1px);
+        }
+
+        .analyze-button:disabled {
+            background: #94a3b8;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+
+        /* ==================================================
+           STATUS
+        ================================================== */
+
+        #status {
+            text-align: center;
+            margin-top: 15px;
+            font-weight: bold;
+        }
+
+
+        /* ==================================================
+           PROGRESS
+        ================================================== */
+
+        .progress-container {
+            display: none;
+
+            margin-top: 20px;
+            padding: 20px;
+
+            background: #f8fafc;
+
+            border-radius: 12px;
+
+            border: 1px solid #e2e8f0;
+        }
+
+        .progress-title {
+            font-weight: bold;
+            margin-bottom: 15px;
+        }
+
+        .progress-step {
+            margin-bottom: 8px;
+
+            font-size: 14px;
+
+            color: #64748b;
+        }
+
+        .progress-step.active {
+            color: #2563eb;
+            font-weight: bold;
+        }
+
+        .progress-step.completed {
+            color: #166534;
+        }
+
+        .progress-bar-background {
+            width: 100%;
+            height: 10px;
+
+            background: #e2e8f0;
+
+            border-radius: 10px;
+
+            overflow: hidden;
+
+            margin-top: 15px;
+        }
+
+        .progress-bar {
+            width: 0%;
+            height: 100%;
+
+            background: #2563eb;
+
+            border-radius: 10px;
+
+            transition: width 0.5s ease;
+        }
+
+        .progress-percentage {
+            text-align: right;
+
+            margin-top: 8px;
+
+            font-size: 13px;
+
+            font-weight: bold;
+
+            color: #2563eb;
+        }
+
+
+        /* ==================================================
+           SUMMARY
+        ================================================== */
+
+        .summary-box {
+            margin-top: 20px;
+            margin-bottom: 25px;
+
+            padding: 20px;
+
+            border-radius: 12px;
+
+            background: #eff6ff;
+
+            border: 1px solid #bfdbfe;
+        }
+
+        .summary-box h3 {
+            margin-bottom: 12px;
+            color: #1e3a8a;
+        }
+
+        .summary-box p {
+            line-height: 1.6;
+            color: #334155;
+        }
+
+
+        /* ==================================================
+           MATCH LEVEL
+        ================================================== */
+
+        .match-level {
+            display: inline-block;
+
+            margin-bottom: 15px;
+
+            padding: 8px 16px;
+
+            border-radius: 20px;
+
+            font-size: 14px;
+
+            font-weight: bold;
+
+            background: #e2e8f0;
+
+            color: #334155;
+        }
+
+        .match-low {
+            background: #fee2e2;
+            color: #991b1b;
+        }
+
+        .match-moderate {
+            background: #fef3c7;
+            color: #92400e;
+        }
+
+        .match-good {
+            background: #dbeafe;
+            color: #1e40af;
+        }
+
+        .match-excellent {
+            background: #dcfce7;
+            color: #166534;
+        }
+
+
+        /* ==================================================
+           SCORE GRID
+        ================================================== */
+
+        .score-grid {
+            display: grid;
+
+            grid-template-columns:
+                repeat(
+                    4,
+                    1fr
+                );
+
+            gap: 20px;
+        }
+
+
+        /* ==================================================
+           SCORE CARD
+        ================================================== */
+
+        .score-card {
+            padding: 25px;
+
+            border-radius: 14px;
+
+            background: #f8fafc;
+
+            text-align: center;
+
+            border: 1px solid #e2e8f0;
+        }
+
+        .score-card h3 {
+            font-size: 15px;
+
+            color: #64748b;
+
+            margin-bottom: 18px;
+        }
+
+
+        /* ==================================================
+           SCORE CIRCLE
+        ================================================== */
+
+        .circle {
+            width: 130px;
+            height: 130px;
+
+            border-radius: 50%;
+
+            margin: auto;
+
+            display: flex;
+
+            align-items: center;
+
+            justify-content: center;
+
+            background:
+                conic-gradient(
+                    #2563eb var(--score, 0%),
+                    #e2e8f0 0
+                );
+
+            position: relative;
+        }
+
+        .circle::before {
+            content: "";
+
+            width: 100px;
+            height: 100px;
+
+            border-radius: 50%;
+
+            background: white;
+
+            position: absolute;
+        }
+
+        .circle span {
+            position: relative;
+
+            z-index: 1;
+
+            font-size: 25px;
+
+            font-weight: bold;
+
+            color: #1e3a8a;
+        }
+
+
+        /* ==================================================
+           SCORE STATUS
+        ================================================== */
+
+        .score-status {
+            margin-top: 15px;
+
+            font-size: 14px;
+
+            font-weight: bold;
+
+            color: #64748b;
+        }
+
+
+        /* ==================================================
+           SKILL COVERAGE
+        ================================================== */
+
+        .skill-coverage {
+            margin-bottom: 25px;
+
+            padding: 22px;
+
+            background: #f8fafc;
+
+            border: 1px solid #e2e8f0;
+
+            border-radius: 12px;
+        }
+
+        .coverage-header {
+            display: flex;
+
+            justify-content: space-between;
+
+            align-items: center;
+
+            margin-bottom: 15px;
+        }
+
+        .coverage-header h3 {
+            color: #1e293b;
+        }
+
+        #skillCoverageText {
+            font-size: 20px;
+
+            font-weight: bold;
+
+            color: #2563eb;
+        }
+
+        .coverage-bar-background {
+            width: 100%;
+
+            height: 12px;
+
+            background: #e2e8f0;
+
+            border-radius: 10px;
+
+            overflow: hidden;
+        }
+
+        .coverage-bar {
+            width: 0%;
+
+            height: 100%;
+
+            background: #2563eb;
+
+            border-radius: 10px;
+
+            transition: width 0.6s ease;
+        }
+
+        #skillCoverageMessage {
+            margin-top: 10px;
+
+            font-size: 14px;
+
+            color: #64748b;
+        }
+
+
+        /* ==================================================
+           SKILLS
+        ================================================== */
+
+        .skills-container {
+            display: grid;
+
+            grid-template-columns:
+                1fr 1fr;
+
+            gap: 25px;
+        }
+
+        .skill-box {
+            padding: 22px;
+
+            border-radius: 12px;
+
+            background: #f8fafc;
+
+            border: 1px solid #e2e8f0;
+        }
+
+        .skill-box h3 {
+            margin-bottom: 18px;
+        }
+
+
+        /* ==================================================
+           SKILL BADGES
+        ================================================== */
+
+        .skill-badges {
+            display: flex;
+
+            flex-wrap: wrap;
+
+            gap: 10px;
+        }
+
+        .skill-badge {
+            display: inline-block;
+
+            padding: 8px 14px;
+
+            border-radius: 20px;
+
+            font-size: 14px;
+
+            font-weight: bold;
+        }
+
+        .matched-badge {
+            background: #dcfce7;
+
+            color: #166534;
+
+            border: 1px solid #86efac;
+        }
+
+        .missing-badge {
+            background: #fee2e2;
+
+            color: #991b1b;
+
+            border: 1px solid #fca5a5;
+        }
+
+        .empty-message {
+            color: #64748b;
+
+            font-size: 14px;
+        }
+
+
+        /* ==================================================
+           RECOMMENDATIONS
+        ================================================== */
+
+        .recommendations {
+            background: #f8fafc;
+
+            padding: 22px;
+
+            border-radius: 12px;
+
+            border: 1px solid #e2e8f0;
+        }
+
+        .recommendation-item {
+            background: white;
+
+            padding: 12px 15px;
+
+            margin-bottom: 10px;
+
+            border-radius: 8px;
+
+            border-left: 4px solid #2563eb;
+
+            list-style: none;
+
+            line-height: 1.5;
+        }
+
+
+        /* ==================================================
+           RESET BUTTON
+        ================================================== */
+
+        .reset-button {
+            width: 100%;
+
+            padding: 15px;
+
+            margin-top: 25px;
+
+            border: 2px solid #2563eb;
+
+            border-radius: 10px;
+
+            background: white;
+
+            color: #2563eb;
+
+            font-size: 16px;
+
+            font-weight: bold;
+
+            cursor: pointer;
+
+            transition: 0.2s;
+        }
+
+        .reset-button:hover {
+            background: #eff6ff;
+        }
+
+
+        /* ==================================================
+           FOOTER
+        ================================================== */
+
+        footer {
+            text-align: center;
+
+            padding: 30px;
+
+            color: #64748b;
+
+            font-size: 14px;
+        }
+
+
+        /* ==================================================
+           TABLET
+        ================================================== */
+
+        @media (max-width: 800px) {
+
+            .score-grid {
+                grid-template-columns:
+                    1fr 1fr;
+            }
+
+        }
+
+
+        /* ==================================================
+           MOBILE
+        ================================================== */
+
+        @media (max-width: 550px) {
+
+            header h1 {
+                font-size: 28px;
+            }
+
+            header p {
+                font-size: 14px;
+            }
+
+            .score-grid {
+                grid-template-columns:
+                    1fr;
+            }
+
+            .skills-container {
+                grid-template-columns:
+                    1fr;
+            }
+
+            .card {
+                padding: 20px;
+            }
+
+            .circle {
+                width: 120px;
+                height: 120px;
+            }
+
+        }
+
+    </style>
+
+</head>
+
+
+<body>
+
+
+    <!-- ==================================================
+         HEADER
+    ================================================== -->
+
+    <header>
+
+        <h1>
+            AI Resume Analyzer
+        </h1>
+
+        <p>
+            AI-powered Resume Analysis & Job Matching
+        </p>
+
+    </header>
+
+
+
+    <main class="container">
+
+
+        <!-- ==================================================
+             INPUT CARD
+        ================================================== -->
+
+        <div class="card">
+
+            <h2>
+                📄 Upload Your Resume
+            </h2>
+
+            <p class="input-description">
+                Upload your resume in PDF format for AI analysis.
+            </p>
+
+
+            <input
+                type="file"
+                id="resume"
+                class="file-input"
+                accept=".pdf"
+            >
+
+
+            <br>
+            <br>
+
+
+            <h2>
+                💼 Job Description
+            </h2>
+
+            <p class="input-description">
+                Paste the job description you want to compare your resume against.
+            </p>
+
+
+            <textarea
+                id="jobDescription"
+                placeholder="Paste the job description here..."
+                maxlength="5000"
+            ></textarea>
+
+
+            <div class="character-counter">
+
+                <span id="characterCount">
+                    0
+                </span>/5000 characters
+
+            </div>
+
+
+            <button
+                onclick="analyzeResume()"
+                id="analyzeButton"
+                class="analyze-button"
+            >
+
+                🔍 Analyze Resume
+
+            </button>
+
+
+            <p id="status"></p>
+
+
+
+            <!-- ==================================================
+                 PROGRESS
+            ================================================== -->
+
+            <div
+                class="progress-container"
+                id="progressContainer"
+            >
+
+                <div class="progress-title">
+                    ⏳ Resume Analysis Progress
+                </div>
+
+
+                <div
+                    class="progress-step"
+                    id="progressUpload"
+                >
+                    ○ Uploading resume
+                </div>
+
+
+                <div
+                    class="progress-step"
+                    id="progressExtract"
+                >
+                    ○ Extracting resume text
+                </div>
+
+
+                <div
+                    class="progress-step"
+                    id="progressAnalyze"
+                >
+                    ○ Comparing resume with job
+                </div>
+
+
+                <div
+                    class="progress-step"
+                    id="progressRecommend"
+                >
+                    ○ Generating recommendations
+                </div>
+
+
+                <div class="progress-bar-background">
+
+                    <div
+                        class="progress-bar"
+                        id="progressBar"
+                    ></div>
+
+                </div>
+
+
+                <div
+                    class="progress-percentage"
+                    id="progressPercentage"
+                >
+                    0%
+                </div>
+
+            </div>
+
+        </div>
+
+
+
+        <!-- ==================================================
+             RESULTS
+        ================================================== -->
+
+        <div
+            class="card"
+            id="results"
+            style="display: none;"
+        >
+
+            <h2>
+                📊 Analysis Results
+            </h2>
+
+
+            <!-- ==================================================
+                 SUMMARY
+            ================================================== -->
+
+            <div class="summary-box">
+
+                <h3>
+                    📌 Resume Strength Summary
+                </h3>
+
+
+                <div
+                    id="matchLevel"
+                    class="match-level"
+                >
+                    Waiting for analysis
+                </div>
+
+
+                <p id="resumeSummary">
+                    Waiting for analysis...
+                </p>
+
+            </div>
+
+
+
+            <!-- ==================================================
+                 SCORES
+            ================================================== -->
+
+            <div class="score-grid">
+
+
+                <div class="score-card">
+
+                    <h3>
+                        Overall Match
+                    </h3>
+
+
+                    <div
+                        class="circle"
+                        id="overallCircle"
+                    >
+
+                        <span id="overallScore">
+                            0%
+                        </span>
+
+                    </div>
+
+
+                    <p
+                        class="score-status"
+                        id="overallStatus"
+                    >
+                        Waiting for analysis
+                    </p>
+
+                </div>
+
+
+
+                <div class="score-card">
+
+                    <h3>
+                        Skill Match
+                    </h3>
+
+
+                    <div
+                        class="circle"
+                        id="skillCircle"
+                    >
+
+                        <span id="skillScore">
+                            0%
+                        </span>
+
+                    </div>
+
+
+                    <p
+                        class="score-status"
+                        id="skillStatus"
+                    >
+                        Waiting for analysis
+                    </p>
+
+                </div>
+
+
+
+                <div class="score-card">
+
+                    <h3>
+                        Semantic Match
+                    </h3>
+
+
+                    <div
+                        class="circle"
+                        id="semanticCircle"
+                    >
+
+                        <span id="semanticScore">
+                            0%
+                        </span>
+
+                    </div>
+
+
+                    <p
+                        class="score-status"
+                        id="semanticStatus"
+                    >
+                        Waiting for analysis
+                    </p>
+
+                </div>
+
+
+
+                <div class="score-card">
+
+                    <h3>
+                        ATS Score
+                    </h3>
+
+
+                    <div
+                        class="circle"
+                        id="atsCircle"
+                    >
+
+                        <span id="atsScore">
+                            0%
+                        </span>
+
+                    </div>
+
+
+                    <p
+                        class="score-status"
+                        id="atsStatus"
+                    >
+                        Waiting for analysis
+                    </p>
+
+                </div>
+
+
+            </div>
+
+
+            <br>
+            <br>
+
+
+
+            <!-- ==================================================
+                 SKILL COVERAGE
+            ================================================== -->
+
+            <div class="skill-coverage">
+
+                <div class="coverage-header">
+
+                    <h3>
+                        📊 Skill Coverage
+                    </h3>
+
+
+                    <span id="skillCoverageText">
+                        0%
+                    </span>
+
+                </div>
+
+
+                <div class="coverage-bar-background">
+
+                    <div
+                        id="skillCoverageBar"
+                        class="coverage-bar"
+                    ></div>
+
+                </div>
+
+
+                <p id="skillCoverageMessage">
+                    Waiting for analysis...
+                </p>
+
+            </div>
+
+
+
+            <!-- ==================================================
+                 SKILLS
+            ================================================== -->
+
+            <div class="skills-container">
+
+
+                <div class="skill-box">
+
+                    <h3>
+                        ✅ Matched Skills
+                    </h3>
+
+
+                    <div
+                        id="matchedSkills"
+                        class="skill-badges"
+                    ></div>
+
+                </div>
+
+
+
+                <div class="skill-box">
+
+                    <h3>
+                        ❌ Missing Skills
+                    </h3>
+
+
+                    <div
+                        id="missingSkills"
+                        class="skill-badges"
+                    ></div>
+
+                </div>
+
+
+            </div>
+
+
+            <br>
+
+
+
+            <!-- ==================================================
+                 RECOMMENDATIONS
+            ================================================== -->
+
+            <div class="recommendations">
+
+                <h3>
+                    💡 Recommendations
+                </h3>
+
+
+                <br>
+
+
+                <ul id="recommendations"></ul>
+
+            </div>
+
+
+
+            <!-- ==================================================
+                 RESET
+            ================================================== -->
+
+            <button
+                onclick="resetAnalysis()"
+                id="resetButton"
+                class="reset-button"
+            >
+
+                🔄 Analyze Another Resume
+
+            </button>
+
+
+        </div>
+
+
+    </main>
+
+
+
+    <!-- ==================================================
+         FOOTER
+    ================================================== -->
+
+    <footer>
+
+        AI Resume Analyzer | B.Tech CSE-AI Project
+
+    </footer>
+
+
+
+    <script>
+
+
+        /* ==================================================
+           CHARACTER COUNTER
+        ================================================== */
+
+        const jobDescriptionInput =
+            document.getElementById(
+                "jobDescription"
+            );
+
+
+        const characterCount =
+            document.getElementById(
+                "characterCount"
+            );
+
+
+        jobDescriptionInput.addEventListener(
+            "input",
+            function () {
+
+                characterCount.innerText =
+                    this.value.length;
+
+            }
+        );
+
+
+
+        /* ==================================================
+           SCORE CIRCLE
+        ================================================== */
+
+        function updateCircle(
+            circleId,
+            score
+        ) {
+
+            const circle =
+                document.getElementById(
+                    circleId
+                );
+
+
+            let safeScore =
+                Number(score);
+
+
+            if (isNaN(safeScore)) {
+
+                safeScore = 0;
+
+            }
+
+
+            safeScore =
+                Math.max(
+                    0,
+                    Math.min(
+                        100,
+                        safeScore
+                    )
+                );
+
+
+            circle.style.setProperty(
+                "--score",
+                safeScore + "%"
+            );
+
+        }
+
+
+
+        /* ==================================================
+           SCORE STATUS
+        ================================================== */
+
+        function getScoreStatus(
+            score,
+            type
+        ) {
+
+            score =
+                Number(score);
+
+
+            if (type === "ats") {
+
+                if (score >= 80) {
+                    return "Excellent ATS Score";
+                }
+
+                if (score >= 60) {
+                    return "Good ATS Score";
+                }
+
+                if (score >= 40) {
+                    return "Needs ATS Improvement";
+                }
+
+                return "Poor ATS Compatibility";
+
+            }
+
+
+            if (score >= 80) {
+                return "Excellent Match";
+            }
+
+            if (score >= 60) {
+                return "Good Match";
+            }
+
+            if (score >= 40) {
+                return "Moderate Match";
+            }
+
+            return "Needs Improvement";
+
+        }
+
+
+
+        /* ==================================================
+           MATCH LEVEL
+        ================================================== */
+
+        function getMatchLevel(
+            score
+        ) {
+
+            score =
+                Number(score);
+
+
+            if (score >= 80) {
+
+                return {
+                    text: "🟢 EXCELLENT MATCH",
+                    className: "match-excellent"
+                };
+
+            }
+
+
+            if (score >= 60) {
+
+                return {
+                    text: "🔵 GOOD MATCH",
+                    className: "match-good"
+                };
+
+            }
+
+
+            if (score >= 40) {
+
+                return {
+                    text: "🟡 MODERATE MATCH",
+                    className: "match-moderate"
+                };
+
+            }
+
+
+            return {
+                text: "🔴 LOW MATCH",
+                className: "match-low"
+            };
+
+        }
+
+
+
+        /* ==================================================
+           RESUME SUMMARY
+        ================================================== */
+
+        function generateResumeSummary(
+            overall,
+            skill,
+            semantic,
+            ats,
+            missingSkills
+        ) {
+
+            let summary = "";
+
+
+            if (overall >= 80) {
+
+                summary +=
+                    "Your resume is highly relevant to this job. ";
+
+            }
+
+            else if (overall >= 60) {
+
+                summary +=
+                    "Your resume has a good overall match with this job. ";
+
+            }
+
+            else if (overall >= 40) {
+
+                summary +=
+                    "Your resume has a moderate match with this job. ";
+
+            }
+
+            else {
+
+                summary +=
+                    "Your resume needs improvement for this job. ";
+
+            }
+
+
+            if (skill >= 80) {
+
+                summary +=
+                    "Your technical skills align strongly with the job requirements. ";
+
+            }
+
+            else if (skill >= 60) {
+
+                summary +=
+                    "Your technical skills have a reasonable alignment with the job requirements. ";
+
+            }
+
+            else {
+
+                summary +=
+                    "Several job-specific technical skills are missing from your resume. ";
+
+            }
+
+
+            if (semantic >= 80) {
+
+                summary +=
+                    "Your resume content is strongly related to the target role. ";
+
+            }
+
+            else if (semantic >= 60) {
+
+                summary +=
+                    "Your resume content has a reasonable relationship with the target role. ";
+
+            }
+
+            else {
+
+                summary +=
+                    "Your project and experience descriptions could be better aligned with the target role. ";
+
+            }
+
+
+            if (ats >= 80) {
+
+                summary +=
+                    "Your ATS compatibility is strong.";
+
+            }
+
+            else if (ats >= 60) {
+
+                summary +=
+                    "Your ATS compatibility is good but can still be improved.";
+
+            }
+
+            else {
+
+                summary +=
+                    "Your resume needs improvement for ATS compatibility.";
+
+            }
+
+
+            if (
+                missingSkills &&
+                missingSkills.length > 0
+            ) {
+
+                summary +=
+                    " Focus on adding relevant experience or projects for " +
+                    missingSkills.length +
+                    " missing skill(s).";
+
+            }
+
+
+            return summary;
+
+        }
+
+
+
+        /* ==================================================
+           SKILL COVERAGE
+        ================================================== */
+
+        function updateSkillCoverage(
+            matchedSkills,
+            missingSkills
+        ) {
+
+            const matched =
+                Array.isArray(matchedSkills)
+                    ? matchedSkills.length
+                    : 0;
+
+
+            const missing =
+                Array.isArray(missingSkills)
+                    ? missingSkills.length
+                    : 0;
+
+
+            const total =
+                matched + missing;
+
+
+            let percentage = 0;
+
+
+            if (total > 0) {
+
+                percentage =
+                    Math.round(
+                        (matched / total) * 100
+                    );
+
+            }
+
+
+            document.getElementById(
+                "skillCoverageText"
+            ).innerText =
+                percentage + "%";
+
+
+            document.getElementById(
+                "skillCoverageBar"
+            ).style.width =
+                percentage + "%";
+
+
+            let message = "";
+
+
+            if (percentage >= 80) {
+
+                message =
+                    "Excellent skill coverage. Your resume matches most required skills.";
+
+            }
+
+            else if (percentage >= 60) {
+
+                message =
+                    "Good skill coverage, but a few relevant skills could be added.";
+
+            }
+
+            else if (percentage >= 40) {
+
+                message =
+                    "Moderate skill coverage. Consider adding more job-relevant skills.";
+
+            }
+
+            else {
+
+                message =
+                    "Low skill coverage. Focus on developing and highlighting the required skills.";
+
+            }
+
+
+            document.getElementById(
+                "skillCoverageMessage"
+            ).innerText =
+                message;
+
+        }
+
+
+
+        /* ==================================================
+           PROGRESS
+        ================================================== */
+
+        function updateProgress(
+            percentage,
+            stepId,
+            message
+        ) {
+
+            const progressBar =
+                document.getElementById(
+                    "progressBar"
+                );
+
+
+            const progressPercentage =
+                document.getElementById(
+                    "progressPercentage"
+                );
+
+
+            const step =
+                document.getElementById(
+                    stepId
+                );
+
+
+            progressBar.style.width =
+                percentage + "%";
+
+
+            progressPercentage.innerText =
+                percentage + "%";
+
+
+            if (step) {
+
+                step.innerText =
+                    "⏳ " + message;
+
+
+                step.classList.add(
+                    "active"
+                );
+
+            }
+
+        }
+
+
+
+        function completeProgressStep(
+            stepId,
+            message
+        ) {
+
+            const step =
+                document.getElementById(
+                    stepId
+                );
+
+
+            if (step) {
+
+                step.innerText =
+                    "✓ " + message;
+
+
+                step.classList.remove(
+                    "active"
+                );
+
+
+                step.classList.add(
+                    "completed"
+                );
+
+            }
+
+        }
+
+
+
+        function resetProgress() {
+
+            const progressContainer =
+                document.getElementById(
+                    "progressContainer"
+                );
+
+
+            const progressBar =
+                document.getElementById(
+                    "progressBar"
+                );
+
+
+            const progressPercentage =
+                document.getElementById(
+                    "progressPercentage"
+                );
+
+
+            progressContainer.style.display =
+                "block";
+
+
+            progressBar.style.width =
+                "0%";
+
+
+            progressPercentage.innerText =
+                "0%";
+
+
+            const steps = [
+
+                "progressUpload",
+                "progressExtract",
+                "progressAnalyze",
+                "progressRecommend"
+
+            ];
+
+
+            steps.forEach(
+                function(id) {
+
+                    const step =
+                        document.getElementById(
+                            id
+                        );
+
+
+                    step.classList.remove(
+                        "active",
+                        "completed"
+                    );
+
+                }
+            );
+
+        }
+
+
+
+        /* ==================================================
+           MAIN ANALYSIS
+        ================================================== */
+
+        async function analyzeResume() {
+
+
+            const resumeInput =
+                document.getElementById(
+                    "resume"
+                );
+
+
+            const jobDescription =
+                document.getElementById(
+                    "jobDescription"
+                );
+
+
+            const status =
+                document.getElementById(
+                    "status"
+                );
+
+
+            const button =
+                document.getElementById(
+                    "analyzeButton"
+                );
+
+
+            const results =
+                document.getElementById(
+                    "results"
+                );
+
+
+            const resumeFile =
+                resumeInput.files[0];
+
+
+            const jobText =
+                jobDescription.value.trim();
+
+
+
+            /* ==================================================
+               VALIDATION
+            ================================================== */
+
+            if (!resumeFile) {
+
+                status.innerText =
+                    "Please select a PDF resume.";
+
+                return;
+
+            }
+
+
+            if (
+                !resumeFile.name
+                    .toLowerCase()
+                    .endsWith(".pdf")
+            ) {
+
+                status.innerText =
+                    "Please upload a PDF file.";
+
+                return;
+
+            }
+
+
+            if (!jobText) {
+
+                status.innerText =
+                    "Please enter the job description.";
+
+                return;
+
+            }
+
+
+            if (jobText.length < 20) {
+
+                status.innerText =
+                    "Please enter a more detailed job description.";
+
+                return;
+
+            }
+
+
+
+            /* ==================================================
+               START
+            ================================================== */
+
+            status.innerText =
+                "⏳ Analyzing resume... Please wait.";
+
+
+            button.disabled =
+                true;
+
+
+            results.style.display =
+                "none";
+
+
+            resetProgress();
+
+
+            updateProgress(
+                10,
+                "progressUpload",
+                "Uploading resume"
+            );
+
+
+
+            try {
+
+
+                /* ==================================================
+                   UPLOAD RESUME
+                ================================================== */
+
+                const uploadData =
+                    new FormData();
+
+
+                uploadData.append(
+                    "file",
+                    resumeFile
+                );
+
+
+                const uploadResponse =
+                    await fetch(
+                        "/upload-resume",
+                        {
+                            method: "POST",
+                            body: uploadData
+                        }
+                    );
+
+
+                if (!uploadResponse.ok) {
+
+                    throw new Error(
+                        "Resume upload failed."
+                    );
+
+                }
+
+
+                const uploadedResume =
+                    await uploadResponse.json();
+
+
+                completeProgressStep(
+                    "progressUpload",
+                    "Resume uploaded"
+                );
+
+
+                updateProgress(
+                    30,
+                    "progressExtract",
+                    "Extracting resume text"
+                );
+
+
+                const resumeText =
+                    uploadedResume.resume_text;
+
+
+                if (!resumeText) {
+
+                    throw new Error(
+                        "Could not extract text from resume."
+                    );
+
+                }
+
+
+                completeProgressStep(
+                    "progressExtract",
+                    "Resume text extracted"
+                );
+
+
+                updateProgress(
+                    50,
+                    "progressAnalyze",
+                    "Comparing resume with job"
+                );
+
+
+
+                /* ==================================================
+                   ANALYSIS
+                ================================================== */
+
+                const analysisData =
+                    new FormData();
+
+
+                analysisData.append(
+                    "resume_text",
+                    resumeText
+                );
+
+
+                analysisData.append(
+                    "job_description",
+                    jobText
+                );
+
+
+                updateProgress(
+                    65,
+                    "progressAnalyze",
+                    "Analyzing skills and semantic match"
+                );
+
+
+                const analysisResponse =
+                    await fetch(
+                        "/analyze",
+                        {
+                            method: "POST",
+                            body: analysisData
+                        }
+                    );
+
+
+                if (!analysisResponse.ok) {
+
+                    const errorText =
+                        await analysisResponse.text();
+
+
+                    console.error(
+                        "Backend error:",
+                        errorText
+                    );
+
+
+                    throw new Error(
+                        "Resume analysis failed."
+                    );
+
+                }
+
+
+                const result =
+                    await analysisResponse.json();
+
+
+                console.log(
+                    "Analysis Result:",
+                    result
+                );
+
+
+                completeProgressStep(
+                    "progressAnalyze",
+                    "Resume and job analyzed"
+                );
+
+
+                updateProgress(
+                    85,
+                    "progressRecommend",
+                    "Generating recommendations"
+                );
+
+
+
+                /* ==================================================
+                   SCORES
+                ================================================== */
+
+                const overall =
+                    Number(
+                        result.overall_match_score
+                    );
+
+
+                const skill =
+                    Number(
+                        result.skill_match_score
+                    );
+
+
+                const semantic =
+                    Number(
+                        result.semantic_match_score
+                    );
+
+
+                const ats =
+                    Number(
+                        result.ats_score
+                    );
+
+
+
+                /* ==================================================
+                   DISPLAY SCORES
+                ================================================== */
+
+                document.getElementById(
+                    "overallScore"
+                ).innerText =
+                    overall + "%";
+
+
+                document.getElementById(
+                    "skillScore"
+                ).innerText =
+                    skill + "%";
+
+
+                document.getElementById(
+                    "semanticScore"
+                ).innerText =
+                    semantic + "%";
+
+
+                document.getElementById(
+                    "atsScore"
+                ).innerText =
+                    ats + "%";
+
+
+
+                /* ==================================================
+                   CIRCLES
+                ================================================== */
+
+                updateCircle(
+                    "overallCircle",
+                    overall
+                );
+
+
+                updateCircle(
+                    "skillCircle",
+                    skill
+                );
+
+
+                updateCircle(
+                    "semanticCircle",
+                    semantic
+                );
+
+
+                updateCircle(
+                    "atsCircle",
+                    ats
+                );
+
+
+
+                /* ==================================================
+                   SCORE STATUS
+                ================================================== */
+
+                document.getElementById(
+                    "overallStatus"
+                ).innerText =
+                    getScoreStatus(
+                        overall,
+                        "overall"
+                    );
+
+
+                document.getElementById(
+                    "skillStatus"
+                ).innerText =
+                    getScoreStatus(
+                        skill,
+                        "skill"
+                    );
+
+
+                document.getElementById(
+                    "semanticStatus"
+                ).innerText =
+                    getScoreStatus(
+                        semantic,
+                        "semantic"
+                    );
+
+
+                document.getElementById(
+                    "atsStatus"
+                ).innerText =
+                    getScoreStatus(
+                        ats,
+                        "ats"
+                    );
+
+
+
+                /* ==================================================
+                   MATCH LEVEL
+                ================================================== */
+
+                const matchLevel =
+                    getMatchLevel(
+                        overall
+                    );
+
+
+                const matchLevelElement =
+                    document.getElementById(
+                        "matchLevel"
+                    );
+
+
+                matchLevelElement.innerText =
+                    matchLevel.text;
+
+
+                matchLevelElement.className =
+                    "match-level " +
+                    matchLevel.className;
+
+
+
+                /* ==================================================
+                   SUMMARY
+                ================================================== */
+
+                const summary =
+                    generateResumeSummary(
+                        overall,
+                        skill,
+                        semantic,
+                        ats,
+                        result.missing_skills
+                    );
+
+
+                document.getElementById(
+                    "resumeSummary"
+                ).innerText =
+                    summary;
+
+
+
+                /* ==================================================
+                   MATCHED SKILLS
+                ================================================== */
+
+                const matchedSkills =
+                    document.getElementById(
+                        "matchedSkills"
+                    );
+
+
+                matchedSkills.innerHTML =
+                    "";
+
+
+                if (
+                    Array.isArray(
+                        result.matched_skills
+                    ) &&
+                    result.matched_skills.length > 0
+                ) {
+
+                    result.matched_skills.forEach(
+                        function(skill) {
+
+                            const badge =
+                                document.createElement(
+                                    "span"
+                                );
+
+
+                            badge.className =
+                                "skill-badge matched-badge";
+
+
+                            badge.innerText =
+                                "✓ " + skill;
+
+
+                            matchedSkills.appendChild(
+                                badge
+                            );
+
+                        }
+                    );
+
+                }
+
+                else {
+
+                    matchedSkills.innerHTML =
+                        '<span class="empty-message">No matching skills found.</span>';
+
+                }
+
+
+
+                /* ==================================================
+                   MISSING SKILLS
+                ================================================== */
+
+                const missingSkills =
+                    document.getElementById(
+                        "missingSkills"
+                    );
+
+
+                missingSkills.innerHTML =
+                    "";
+
+
+                if (
+                    Array.isArray(
+                        result.missing_skills
+                    ) &&
+                    result.missing_skills.length > 0
+                ) {
+
+                    result.missing_skills.forEach(
+                        function(skill) {
+
+                            const badge =
+                                document.createElement(
+                                    "span"
+                                );
+
+
+                            badge.className =
+                                "skill-badge missing-badge";
+
+
+                            badge.innerText =
+                                "✕ " + skill;
+
+
+                            missingSkills.appendChild(
+                                badge
+                            );
+
+                        }
+                    );
+
+                }
+
+                else {
+
+                    missingSkills.innerHTML =
+                        '<span class="empty-message">No missing skills. Great job!</span>';
+
+                }
+
+
+
+                /* ==================================================
+                   SKILL COVERAGE
+                ================================================== */
+
+                updateSkillCoverage(
+                    result.matched_skills,
+                    result.missing_skills
+                );
+
+
+
+                /* ==================================================
+                   RECOMMENDATIONS
+                ================================================== */
+
+                const recommendations =
+                    document.getElementById(
+                        "recommendations"
+                    );
+
+
+                recommendations.innerHTML =
+                    "";
+
+
+                if (
+                    Array.isArray(
+                        result.recommendations
+                    ) &&
+                    result.recommendations.length > 0
+                ) {
+
+                    result.recommendations.forEach(
+                        function(recommendation) {
+
+                            const li =
+                                document.createElement(
+                                    "li"
+                                );
+
+
+                            li.className =
+                                "recommendation-item";
+
+
+                            li.innerText =
+                                "💡 " +
+                                recommendation;
+
+
+                            recommendations.appendChild(
+                                li
+                            );
+
+                        }
+                    );
+
+                }
+
+                else {
+
+                    recommendations.innerHTML =
+                        '<li class="recommendation-item">Your resume looks good for this job. Keep improving your relevant skills.</li>';
+
+                }
+
+
+
+                /* ==================================================
+                   COMPLETE PROGRESS
+                ================================================== */
+
+                completeProgressStep(
+                    "progressRecommend",
+                    "Recommendations generated"
+                );
+
+
+                document.getElementById(
+                    "progressBar"
+                ).style.width =
+                    "100%";
+
+
+                document.getElementById(
+                    "progressPercentage"
+                ).innerText =
+                    "100%";
+
+
+                results.style.display =
+                    "block";
+
+
+                status.innerText =
+                    "✅ Analysis completed successfully!";
+
+
+                results.scrollIntoView({
+                    behavior: "smooth"
+                });
+
+            }
+
+
+            catch (error) {
+
+                console.error(
+                    "Analysis Error:",
+                    error
+                );
+
+
+                status.innerText =
+                    "❌ Error: " +
+                    error.message;
+
+            }
+
+
+            finally {
+
+                button.disabled =
+                    false;
+
+            }
+
+        }
+
+
+
+        /* ==================================================
+           RESET ANALYSIS
+        ================================================== */
+
+        function resetAnalysis() {
+
+
+            document.getElementById(
+                "resume"
+            ).value = "";
+
+
+            document.getElementById(
+                "jobDescription"
+            ).value = "";
+
+
+            document.getElementById(
+                "characterCount"
+            ).innerText =
+                "0";
+
+
+            document.getElementById(
+                "results"
+            ).style.display =
+                "none";
+
+
+            document.getElementById(
+                "status"
+            ).innerText =
+                "";
+
+
+            document.getElementById(
+                "progressContainer"
+            ).style.display =
+                "none";
+
+
+            document.getElementById(
+                "progressBar"
+            ).style.width =
+                "0%";
+
+
+            document.getElementById(
+                "progressPercentage"
+            ).innerText =
+                "0%";
+
+
+            document.getElementById(
+                "overallScore"
+            ).innerText =
+                "0%";
+
+
+            document.getElementById(
+                "skillScore"
+            ).innerText =
+                "0%";
+
+
+            document.getElementById(
+                "semanticScore"
+            ).innerText =
+                "0%";
+
+
+            document.getElementById(
+                "atsScore"
+            ).innerText =
+                "0%";
+
+
+            updateCircle(
+                "overallCircle",
+                0
+            );
+
+
+            updateCircle(
+                "skillCircle",
+                0
+            );
+
+
+            updateCircle(
+                "semanticCircle",
+                0
+            );
+
+
+            updateCircle(
+                "atsCircle",
+                0
+            );
+
+
+            document.getElementById(
+                "overallStatus"
+            ).innerText =
+                "Waiting for analysis";
+
+
+            document.getElementById(
+                "skillStatus"
+            ).innerText =
+                "Waiting for analysis";
+
+
+            document.getElementById(
+                "semanticStatus"
+            ).innerText =
+                "Waiting for analysis";
+
+
+            document.getElementById(
+                "atsStatus"
+            ).innerText =
+                "Waiting for analysis";
+
+
+            document.getElementById(
+                "matchLevel"
+            ).innerText =
+                "Waiting for analysis";
+
+
+            document.getElementById(
+                "matchLevel"
+            ).className =
+                "match-level";
+
+
+            document.getElementById(
+                "resumeSummary"
+            ).innerText =
+                "Waiting for analysis...";
+
+
+            document.getElementById(
+                "matchedSkills"
+            ).innerHTML =
+                "";
+
+
+            document.getElementById(
+                "missingSkills"
+            ).innerHTML =
+                "";
+
+
+            document.getElementById(
+                "recommendations"
+            ).innerHTML =
+                "";
+
+
+            document.getElementById(
+                "skillCoverageText"
+            ).innerText =
+                "0%";
+
+
+            document.getElementById(
+                "skillCoverageBar"
+            ).style.width =
+                "0%";
+
+
+            document.getElementById(
+                "skillCoverageMessage"
+            ).innerText =
+                "Waiting for analysis...";
+
+
+            window.scrollTo({
+
+                top: 0,
+
+                behavior: "smooth"
+
+            });
+
+        }
+
+    </script>
+
+</body>
+
+</html>
