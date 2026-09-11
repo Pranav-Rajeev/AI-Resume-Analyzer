@@ -1,9 +1,16 @@
 # Python virtual environment
 venv/
+.venv312/
 
 # Python cache
 __pycache__/
 *.py[cod]
+
+# PyCharm settings
+.idea/
+
+# Server logs
+*.log
 
 # Uploaded resumes
 uploads/*.pdf

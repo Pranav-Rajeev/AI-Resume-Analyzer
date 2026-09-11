@@ -1,2655 +1,1285 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en" data-theme="light">
 
 <head>
 
     <meta charset="UTF-8">
-
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI Resume Analyzer — Smart ATS Resume Scoring</title>
+    <meta name="description" content="Analyze your resume with AI-powered ATS compatibility scoring, skills detection, and personalized recommendations to strengthen your application.">
 
-    <title>AI Resume Analyzer</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
 
     <style>
 
-        /* ==================================================
-           GLOBAL
-        ================================================== */
-
-        * {
-            box-sizing: border-box;
-            margin: 0;
-            padding: 0;
+        :root {
+            --bg: #f4f6fb;
+            --bg-accent: #eef1f9;
+            --surface: #ffffff;
+            --surface-2: #f7f8fc;
+            --border: #e3e7f0;
+            --text: #0f172a;
+            --text-soft: #475569;
+            --text-muted: #94a3b8;
+            --primary: #6366f1;
+            --primary-strong: #4f46e5;
+            --violet: #8b5cf6;
+            --cyan: #06b6d4;
+            --gradient: linear-gradient(135deg, #6366f1 0%, #8b5cf6 55%, #06b6d4 120%);
+            --success: #10b981;
+            --success-soft: rgba(16, 185, 129, 0.12);
+            --warning: #f59e0b;
+            --warning-soft: rgba(245, 158, 11, 0.12);
+            --danger: #ef4444;
+            --danger-soft: rgba(239, 68, 68, 0.10);
+            --info-soft: rgba(99, 102, 241, 0.10);
+            --shadow-sm: 0 1px 2px rgba(15, 23, 42, 0.05), 0 1px 3px rgba(15, 23, 42, 0.06);
+            --shadow-md: 0 4px 12px rgba(15, 23, 42, 0.06), 0 2px 4px rgba(15, 23, 42, 0.05);
+            --shadow-lg: 0 12px 32px rgba(15, 23, 42, 0.10), 0 4px 12px rgba(15, 23, 42, 0.06);
+            --ring: 0 0 0 4px rgba(99, 102, 241, 0.18);
+            --gauge-track: #e5e9f2;
+            --radius-lg: 20px;
+            --radius-md: 14px;
+            --radius-sm: 10px;
         }
+
+        [data-theme="dark"] {
+            --bg: #0b0f1c;
+            --bg-accent: #0e1324;
+            --surface: #121828;
+            --surface-2: #171e31;
+            --border: #232b42;
+            --text: #e8ecf7;
+            --text-soft: #a7b0c7;
+            --text-muted: #6b7690;
+            --gradient: linear-gradient(135deg, #818cf8 0%, #a78bfa 55%, #22d3ee 120%);
+            --success-soft: rgba(16, 185, 129, 0.16);
+            --warning-soft: rgba(245, 158, 11, 0.16);
+            --danger-soft: rgba(239, 68, 68, 0.16);
+            --info-soft: rgba(129, 140, 248, 0.14);
+            --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.4), 0 1px 3px rgba(0, 0, 0, 0.4);
+            --shadow-md: 0 4px 14px rgba(0, 0, 0, 0.35), 0 2px 6px rgba(0, 0, 0, 0.3);
+            --shadow-lg: 0 16px 40px rgba(0, 0, 0, 0.5), 0 6px 16px rgba(0, 0, 0, 0.35);
+            --ring: 0 0 0 4px rgba(129, 140, 248, 0.22);
+            --gauge-track: #232b42;
+        }
+
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+
+        html { scroll-behavior: smooth; }
 
         body {
-            font-family: Arial, sans-serif;
-            background: #f4f7fb;
-            color: #1f2937;
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+            background: var(--bg);
+            color: var(--text);
             min-height: 100vh;
+            line-height: 1.6;
+            -webkit-font-smoothing: antialiased;
+            transition: background 0.3s ease, color 0.3s ease;
         }
 
+        ::selection { background: rgba(99, 102, 241, 0.28); }
 
-        /* ==================================================
-           HEADER
-        ================================================== */
+        .skip-link {
+            position: absolute; left: -999px; top: 0;
+            background: var(--primary); color: #fff;
+            padding: 10px 16px; border-radius: 0 0 10px 0;
+            z-index: 200; font-weight: 600;
+        }
+        .skip-link:focus { left: 0; }
 
-        header {
-            background: linear-gradient(
-                135deg,
-                #2563eb,
-                #4f46e5
-            );
+        .container { max-width: 1120px; margin: 0 auto; padding: 0 24px; }
 
-            color: white;
-            padding: 45px 20px;
-            text-align: center;
+        /* ===== NAVBAR ===== */
+        .navbar {
+            position: sticky; top: 0; z-index: 100;
+            background: color-mix(in srgb, var(--surface) 82%, transparent);
+            backdrop-filter: blur(14px);
+            -webkit-backdrop-filter: blur(14px);
+            border-bottom: 1px solid var(--border);
         }
 
-        header h1 {
-            font-size: 40px;
-            margin-bottom: 10px;
+        .navbar-inner {
+            display: flex; align-items: center; justify-content: space-between;
+            height: 64px;
         }
 
-        header p {
-            font-size: 17px;
-            opacity: 0.9;
+        .brand { display: flex; align-items: center; gap: 10px; text-decoration: none; color: var(--text); font-weight: 800; font-size: 17px; }
+        .brand-mark {
+            display: grid; place-items: center; width: 34px; height: 34px;
+            border-radius: 10px; background: var(--gradient);
+            color: #fff; box-shadow: var(--shadow-md);
         }
+        .brand-mark svg { width: 20px; height: 20px; }
 
-
-        /* ==================================================
-           MAIN
-        ================================================== */
-
-        .container {
-            max-width: 1050px;
-            margin: 40px auto;
-            padding: 0 20px;
+        .nav-links { display: flex; align-items: center; gap: 6px; }
+        .nav-links a {
+            text-decoration: none; color: var(--text-soft); font-size: 14px; font-weight: 600;
+            padding: 8px 14px; border-radius: 10px; transition: 0.2s;
         }
+        .nav-links a:hover { background: var(--surface-2); color: var(--text); }
 
-
-        /* ==================================================
-           CARD
-        ================================================== */
-
-        .card {
-            background: white;
-            border-radius: 16px;
-            padding: 30px;
-            margin-bottom: 25px;
-
-            box-shadow:
-                0 5px 20px rgba(
-                    0,
-                    0,
-                    0,
-                    0.08
-                );
-        }
-
-        .card h2 {
-            margin-bottom: 20px;
-            color: #111827;
-        }
-
-
-        /* ==================================================
-           INPUT LABEL
-        ================================================== */
-
-        .input-description {
-            color: #64748b;
-            font-size: 13px;
-            margin-top: -12px;
-            margin-bottom: 15px;
-        }
-
-
-        /* ==================================================
-           FILE INPUT
-        ================================================== */
-
-        .file-input {
-            width: 100%;
-            padding: 15px;
-
-            border: 2px dashed #cbd5e1;
-            border-radius: 10px;
-
-            background: #f8fafc;
-            cursor: pointer;
-        }
-
-        .file-input:hover {
-            border-color: #2563eb;
-        }
-
-
-        /* ==================================================
-           TEXTAREA
-        ================================================== */
-
-        textarea {
-            width: 100%;
-            min-height: 180px;
-
-            padding: 15px;
-
-            border: 1px solid #cbd5e1;
-            border-radius: 10px;
-
-            resize: vertical;
-
-            font-size: 15px;
-            font-family: Arial, sans-serif;
-
-            outline: none;
-        }
-
-        textarea:focus {
-            border-color: #2563eb;
-        }
-
-
-        /* ==================================================
-           CHARACTER COUNTER
-        ================================================== */
-
-        .character-counter {
-            text-align: right;
-            margin-top: 6px;
-            font-size: 12px;
-            color: #64748b;
-        }
-
-
-        /* ==================================================
-           ANALYZE BUTTON
-        ================================================== */
-
-        .analyze-button {
-            width: 100%;
-
-            padding: 16px;
-            margin-top: 20px;
-
-            border: none;
-            border-radius: 10px;
-
-            background: #2563eb;
-            color: white;
-
-            font-size: 17px;
-            font-weight: bold;
-
-            cursor: pointer;
-
+        .icon-btn {
+            display: grid; place-items: center; width: 38px; height: 38px;
+            border: 1px solid var(--border); border-radius: 10px;
+            background: var(--surface); color: var(--text-soft); cursor: pointer;
             transition: 0.2s;
         }
+        .icon-btn:hover { color: var(--primary); border-color: var(--primary); box-shadow: var(--shadow-sm); }
+        .icon-btn svg { width: 18px; height: 18px; }
+        .icon-sun { display: none; }
+        [data-theme="dark"] .icon-sun { display: block; }
+        [data-theme="dark"] .icon-moon { display: none; }
 
-        .analyze-button:hover {
-            background: #1d4ed8;
-            transform: translateY(-1px);
+        /* ===== HERO ===== */
+        .hero {
+            position: relative; overflow: hidden;
+            text-align: center; padding: 72px 24px 64px;
+        }
+        .hero::before {
+            content: ""; position: absolute; inset: 0; z-index: -2;
+            background:
+                radial-gradient(600px 300px at 18% 0%, rgba(99, 102, 241, 0.14), transparent 60%),
+                radial-gradient(600px 300px at 82% 10%, rgba(6, 182, 212, 0.12), transparent 60%),
+                radial-gradient(720px 380px at 50% 110%, rgba(139, 92, 246, 0.12), transparent 60%);
+        }
+        .hero::after {
+            content: ""; position: absolute; inset: 0; z-index: -3;
+            background-image: radial-gradient(var(--border) 1px, transparent 1px);
+            background-size: 26px 26px; opacity: 0.5;
+            mask-image: radial-gradient(420px 260px at 50% 100%, transparent, black);
         }
 
-        .analyze-button:disabled {
-            background: #94a3b8;
-            cursor: not-allowed;
-            transform: none;
+        .hero-badge {
+            display: inline-flex; align-items: center; gap: 8px;
+            padding: 7px 16px; border-radius: 999px;
+            background: var(--info-soft); border: 1px solid rgba(99, 102, 241, 0.35);
+            color: var(--primary); font-size: 13px; font-weight: 700; letter-spacing: 0.02em;
+            margin-bottom: 20px;
+        }
+        .hero-badge .dot { width: 8px; height: 8px; border-radius: 50%; background: var(--success); box-shadow: 0 0 0 4px rgba(16,185,129,0.2); animation: pulse 2s infinite; }
+
+        .hero h1 {
+            font-size: clamp(34px, 5.4vw, 58px);
+            font-weight: 900; letter-spacing: -0.04em; line-height: 1.08;
+            margin-bottom: 18px;
+        }
+        .hero h1 .grad {
+            background: var(--gradient);
+            -webkit-background-clip: text; background-clip: text;
+            -webkit-text-fill-color: transparent; color: transparent;
         }
 
-
-        /* ==================================================
-           STATUS
-        ================================================== */
-
-        #status {
-            text-align: center;
-            margin-top: 15px;
-            font-weight: bold;
+        .hero p {
+            max-width: 620px; margin: 0 auto 30px;
+            font-size: clamp(15px, 2vw, 18px); color: var(--text-soft);
         }
 
+        .hero-stats { display: flex; gap: 12px; justify-content: center; flex-wrap: wrap; }
+        .hero-stat {
+            display: flex; align-items: center; gap: 10px;
+            background: var(--surface); border: 1px solid var(--border);
+            border-radius: 999px; padding: 10px 18px; box-shadow: var(--shadow-sm);
+            font-size: 13.5px; font-weight: 600; color: var(--text-soft);
+        }
+        .hero-stat svg { width: 16px; height: 16px; color: var(--primary); }
 
-        /* ==================================================
-           PROGRESS
-        ================================================== */
+        .btn {
+            display: inline-flex; align-items: center; justify-content: center; gap: 9px;
+            font-family: inherit; font-weight: 700; font-size: 15px;
+            border: none; cursor: pointer; border-radius: var(--radius-md);
+            transition: transform 0.15s ease, box-shadow 0.2s ease, background 0.2s ease, border-color 0.2s;
+        }
+        .btn svg { width: 17px; height: 17px; }
+        .btn-primary {
+            background: var(--gradient); color: #fff; padding: 14px 26px;
+            box-shadow: 0 8px 20px rgba(99, 102, 241, 0.35);
+            animation: floatY 3.2s ease-in-out infinite;
+        }
+        .btn-primary:hover { animation-play-state: paused; filter: brightness(1.06); box-shadow: 0 16px 34px rgba(99, 102, 241, 0.55); }
+        .btn-primary:active { filter: brightness(1); }
+        .btn-primary:disabled { opacity: 0.65; cursor: not-allowed; transform: none; box-shadow: none; animation: none; }
 
-        .progress-container {
-            display: none;
+        .btn-ghost {
+            background: var(--surface); color: var(--text); padding: 12px 20px;
+            border: 1px solid var(--border);
+        }
+        .btn-ghost:hover { border-color: var(--primary); color: var(--primary); }
 
-            margin-top: 20px;
-            padding: 20px;
+        .btn-block { width: 100%; }
 
-            background: #f8fafc;
+        .btn .spinner {
+            width: 16px; height: 16px; border-radius: 50%;
+            border: 2px solid rgba(255, 255, 255, 0.35); border-top-color: #fff;
+            animation: spin 0.8s linear infinite;
+        }
+        .btn-ghost .spinner { border-color: var(--border); border-top-color: var(--primary); }
 
-            border-radius: 12px;
+        /* ===== SECTIONS ===== */
+        section.block { padding: 26px 0 64px; }
 
-            border: 1px solid #e2e8f0;
+        .panel {
+            background: var(--surface); border: 1px solid var(--border);
+            border-radius: var(--radius-lg); box-shadow: var(--shadow-md); padding: 30px;
+            margin-bottom: 28px;
         }
 
-        .progress-title {
-            font-weight: bold;
-            margin-bottom: 15px;
+        .panel-head { display: flex; align-items: center; gap: 12px; margin-bottom: 24px; }
+        .panel-icon {
+            display: grid; place-items: center; width: 40px; height: 40px; flex-shrink: 0;
+            border-radius: 12px; background: var(--info-soft); color: var(--primary);
         }
+        .panel-icon svg { width: 21px; height: 21px; }
+        .panel-head h2 { font-size: 19px; font-weight: 800; letter-spacing: -0.01em; }
+        .panel-head .sub { font-size: 13.5px; color: var(--text-muted); margin-top: 2px; }
 
-        .progress-step {
-            margin-bottom: 8px;
+        .input-grid { display: grid; grid-template-columns: 1fr; gap: 26px; }
 
-            font-size: 14px;
-
-            color: #64748b;
+        /* ===== DROPZONE ===== */
+        .dropzone {
+            position: relative;
+            border: 2px dashed var(--border); border-radius: var(--radius-md);
+            background: var(--surface-2); padding: 46px 24px; text-align: center;
+            cursor: pointer; transition: 0.2s;
         }
+        .dropzone:hover, .dropzone.dragover { border-color: var(--primary); background: var(--info-soft); }
+        .dropzone.dragover { box-shadow: var(--ring); }
+        .dropzone.error { border-color: var(--danger); background: var(--danger-soft); }
 
-        .progress-step.active {
-            color: #2563eb;
-            font-weight: bold;
+        .dropzone-icon {
+            display: grid; place-items: center; width: 60px; height: 60px; margin: 0 auto 16px;
+            border-radius: 18px; background: var(--info-soft); color: var(--primary);
         }
+        .dropzone-icon svg { width: 28px; height: 28px; }
+        .dropzone .dz-title { font-weight: 700; font-size: 15.5px; margin-bottom: 4px; }
+        .dropzone .dz-hint { font-size: 13px; color: var(--text-muted); }
+        .dropzone .dz-strong { color: var(--primary); font-weight: 700; }
 
-        .progress-step.completed {
-            color: #166534;
+        .file-card {
+            display: flex; align-items: center; gap: 14px;
+            background: var(--surface-2); border: 1px solid var(--border);
+            border-radius: var(--radius-md); padding: 14px 16px;
         }
-
-        .progress-bar-background {
-            width: 100%;
-            height: 10px;
-
-            background: #e2e8f0;
-
-            border-radius: 10px;
-
-            overflow: hidden;
-
-            margin-top: 15px;
+        .file-card .file-icon {
+            display: grid; place-items: center; width: 42px; height: 42px;
+            border-radius: 12px; background: rgba(239, 68, 68, 0.12); color: var(--danger); flex-shrink: 0;
         }
+        .file-card .file-icon svg { width: 22px; height: 22px; }
+        .file-card .file-name { font-weight: 700; font-size: 14px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+        .file-card .file-size { font-size: 12.5px; color: var(--text-muted); }
+        .file-card .file-remove {
+            margin-left: auto; width: 32px; height: 32px; flex-shrink: 0;
+            display: grid; place-items: center; border: none; border-radius: 9px;
+            background: transparent; color: var(--text-muted); cursor: pointer; transition: 0.2s;
+        }
+        .file-card .file-remove:hover { background: var(--danger-soft); color: var(--danger); }
+        .file-card .file-remove svg { width: 16px; height: 16px; }
+
+        .action-row { display: flex; gap: 12px; margin-top: 22px; }
+
+        /* ===== PROGRESS ===== */
+        .progress { display: none; margin-top: 24px; }
+        .progress.open { display: block; animation: fadeUp 0.4s ease; }
+
+        .steps { display: flex; align-items: center; gap: 0; margin-bottom: 22px; }
+        .step { display: flex; align-items: center; gap: 10px; flex: 1; position: relative; }
+        .step:last-child { flex: 0; }
+        .step-node {
+            display: grid; place-items: center; width: 34px; height: 34px; flex-shrink: 0;
+            border-radius: 50%; background: var(--surface-2); border: 2px solid var(--border);
+            color: var(--text-muted); font-size: 13px; font-weight: 800; transition: 0.3s; position: relative; z-index: 1;
+        }
+        .step-label { font-size: 12.5px; font-weight: 700; color: var(--text-muted); white-space: nowrap; transition: 0.3s; }
+        .step-line { flex: 1; height: 3px; background: var(--border); border-radius: 3px; margin: 0 12px; position: relative; overflow: hidden; }
+        .step-line::after { content: ""; position: absolute; inset: 0; background: var(--gradient); width: var(--line-progress, 0%); transition: width 0.6s ease; }
+
+        .step.active .step-node { border-color: var(--primary); color: var(--primary); background: var(--info-soft); animation: pulseRing 1.4s infinite; }
+        .step.active .step-label { color: var(--primary); }
+        .step.done .step-node { background: var(--success); border-color: var(--success); color: #fff; }
+        .step.done .step-label { color: var(--success); }
 
         .progress-bar {
-            width: 0%;
-            height: 100%;
-
-            background: #2563eb;
-
-            border-radius: 10px;
-
-            transition: width 0.5s ease;
+            height: 10px; border-radius: 999px; background: var(--gauge-track); overflow: hidden;
         }
-
-        .progress-percentage {
-            text-align: right;
-
-            margin-top: 8px;
-
-            font-size: 13px;
-
-            font-weight: bold;
-
-            color: #2563eb;
+        .progress-bar-fill {
+            height: 100%; width: 0%; border-radius: 999px; background: var(--gradient);
+            box-shadow: 0 0 12px rgba(99, 102, 241, 0.6);
+            transition: width 0.7s cubic-bezier(0.22, 1, 0.36, 1);
         }
+        .progress-meta { display: flex; justify-content: space-between; margin-top: 10px; font-size: 12.5px; color: var(--text-muted); font-weight: 600; }
 
+        .progress-msg { margin-top: 12px; font-size: 13px; color: var(--text-soft); font-weight: 600; text-align: center; }
 
-        /* ==================================================
-           SUMMARY
-        ================================================== */
+        .progress-msg.error { color: var(--danger); }
+        .progress-msg.success { color: var(--success); }
+
+        /* ===== RESULTS ===== */
+        .results { display: none; }
+        .results.open { display: block; animation: fadeUp 0.5s ease; }
+
+        .result-head {
+            display: flex; align-items: center; justify-content: space-between; gap: 16px;
+            margin-bottom: 26px; flex-wrap: wrap;
+        }
+        .result-head h2 { font-size: 22px; font-weight: 900; letter-spacing: -0.02em; }
+        .result-head .sub { font-size: 13.5px; color: var(--text-muted); margin-top: 2px; }
+
+        .match-badge {
+            display: inline-flex; align-items: center; gap: 8px;
+            padding: 9px 18px; border-radius: 999px; font-size: 13.5px; font-weight: 800;
+            border: 1px solid transparent; letter-spacing: 0.02em;
+        }
+        .match-badge svg { width: 16px; height: 16px; }
+        .match-excellent { background: var(--success-soft); color: var(--success); border-color: rgba(16,185,129,0.35); }
+        .match-good { background: var(--info-soft); color: var(--primary); border-color: rgba(99,102,241,0.35); }
+        .match-moderate { background: var(--warning-soft); color: var(--warning); border-color: rgba(245,158,11,0.35); }
+        .match-low { background: var(--danger-soft); color: var(--danger); border-color: rgba(239,68,68,0.35); }
 
         .summary-box {
-            margin-top: 20px;
-            margin-bottom: 25px;
+            background: linear-gradient(120deg, var(--info-soft), transparent);
+            border: 1px solid rgba(99, 102, 241, 0.25);
+            border-radius: var(--radius-md); padding: 20px 22px; margin-bottom: 28px;
+        }
+        .summary-box .summary-title { display: flex; align-items: center; gap: 9px; font-weight: 800; font-size: 14px; color: var(--primary); margin-bottom: 8px; }
+        .summary-box .summary-title svg { width: 17px; height: 17px; }
+        .summary-box p { font-size: 14.5px; color: var(--text-soft); }
 
-            padding: 20px;
+        /* ===== GAUGES ===== */
+        .gauge-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 18px; margin-bottom: 28px; }
 
-            border-radius: 12px;
+        .gauge-card {
+            background: var(--surface-2); border: 1px solid var(--border);
+            border-radius: var(--radius-lg); padding: 22px 18px; text-align: center;
+            display: flex; flex-direction: column; align-items: center; gap: 14px;
+            box-shadow: var(--shadow-sm); transition: 0.25s;
+        }
+        .gauge-card:hover { transform: translateY(-3px); box-shadow: var(--shadow-md); border-color: rgba(99,102,241,0.4); }
+        .gauge-card h3 { font-size: 13px; font-weight: 800; color: var(--text-soft); text-transform: uppercase; letter-spacing: 0.06em; }
 
-            background: #eff6ff;
+        .gauge-wrap { position: relative; width: 128px; height: 128px; }
+        .gauge-wrap svg { width: 100%; height: 100%; transform: rotate(-90deg); }
+        .gauge-track { fill: none; stroke: var(--gauge-track); stroke-width: 11; }
+        .gauge-fill {
+            fill: none; stroke-width: 11; stroke-linecap: round;
+            stroke-dasharray: 326.73; stroke-dashoffset: 326.73;
+            transition: stroke-dashoffset 1.1s cubic-bezier(0.22, 1, 0.36, 1), stroke 0.4s ease;
+        }
+        .gauge-center { position: absolute; inset: 0; display: grid; place-items: center; }
+        .gauge-value { font-size: 26px; font-weight: 900; letter-spacing: -0.03em; }
+        .gauge-value small { font-size: 15px; font-weight: 800; color: var(--text-muted); }
 
-            border: 1px solid #bfdbfe;
+        .gauge-status { font-size: 12.5px; font-weight: 700; color: var(--text-muted); }
+
+        .gauge-overall { grid-column: span 1; }
+        .gauge-overall .gauge-wrap { width: 170px; height: 170px; }
+        .gauge-overall .gauge-value { font-size: 34px; }
+        .gauge-overall .gauge-fill { stroke-width: 14; }
+        .gauge-overall .gauge-track { stroke-width: 14; }
+        .gauge-overall .gauge-status { font-size: 14px; }
+
+        /* ===== METRIC GRID ===== */
+        .metric-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 18px; margin-bottom: 28px; }
+
+        .metric-card { background: var(--surface-2); border: 1px solid var(--border); border-radius: var(--radius-md); padding: 18px 20px; }
+        .metric-head { display: flex; align-items: center; justify-content: space-between; margin-bottom: 12px; }
+        .metric-head .m-label { display: flex; align-items: center; gap: 8px; font-size: 13.5px; font-weight: 800; }
+        .metric-head .m-label svg { width: 16px; height: 16px; }
+        .metric-head .m-value { font-size: 22px; font-weight: 900; letter-spacing: -0.02em; }
+
+        .bar { height: 9px; border-radius: 999px; background: var(--gauge-track); overflow: hidden; }
+        .bar-fill { height: 100%; width: 0%; border-radius: 999px; transition: width 1s cubic-bezier(0.22, 1, 0.36, 1); }
+
+        .m-skill .m-label svg, .m-skill .bar-fill { color: var(--primary); background: linear-gradient(90deg, #6366f1, #8b5cf6); }
+        .m-semantic .m-label svg, .m-semantic .bar-fill { color: var(--violet); background: linear-gradient(90deg, #8b5cf6, #d946ef); }
+        .m-ats .m-label svg, .m-ats .bar-fill { color: var(--cyan); background: linear-gradient(90deg, #06b6d4, #22d3ee); }
+        .m-coverage .m-label svg, .m-coverage .bar-fill { color: var(--success); background: linear-gradient(90deg, #10b981, #34d399); }
+
+        .metric-card p { font-size: 13px; color: var(--text-muted); margin-top: 10px; }
+
+        /* ===== TWO COLUMN CARDS ===== */
+        .split-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 26px; margin-bottom: 28px; }
+
+        .sub-card { background: var(--surface-2); border: 1px solid var(--border); border-radius: var(--radius-lg); padding: 22px; }
+        .sub-card h3 { display: flex; align-items: center; gap: 9px; font-size: 15.5px; font-weight: 800; margin-bottom: 18px; }
+        .sub-card h3 svg { width: 18px; height: 18px; color: var(--primary); }
+        .sub-card h3.matched svg { color: var(--success); }
+        .sub-card h3.missing svg { color: var(--danger); }
+
+        .chips { display: flex; flex-wrap: wrap; gap: 9px; }
+        .chip {
+            display: inline-flex; align-items: center; gap: 7px;
+            padding: 7px 14px; border-radius: 999px; font-size: 13px; font-weight: 700;
+            border: 1px solid transparent; animation: fadeUp 0.4s ease backwards;
+        }
+        .chip svg { width: 14px; height: 14px; }
+        .chip-matched { background: var(--success-soft); color: var(--success); border-color: rgba(16,185,129,0.35); }
+        .chip-missing { background: var(--danger-soft); color: var(--danger); border-color: rgba(239,68,68,0.35); }
+        .chip-neutral { background: var(--info-soft); color: var(--primary); border-color: rgba(99,102,241,0.35); }
+
+        .empty-hint { font-size: 13.5px; color: var(--text-muted); font-style: italic; }
+
+        /* ===== ATS CHECKLIST ===== */
+        .ats-card { margin-bottom: 28px; }
+        .ats-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 12px; }
+
+        .check-item {
+            display: flex; align-items: center; gap: 11px;
+            padding: 13px 15px; border-radius: var(--radius-sm);
+            background: var(--surface-2); border: 1px solid var(--border); font-size: 13.5px; font-weight: 600;
+        }
+        .check-item .check {
+            display: grid; place-items: center; width: 22px; height: 22px; flex-shrink: 0;
+            border-radius: 50%; font-size: 12px; font-weight: 900;
+        }
+        .check-item.ok .check { background: var(--success); color: #fff; }
+        .check-item.fail .check { background: var(--danger); color: #fff; }
+        .check-item.ok { color: var(--text); }
+        .check-item.ok::after { content: "Present"; margin-left: auto; font-size: 11.5px; font-weight: 800; color: var(--success); }
+        .check-item.fail { color: var(--text-muted); }
+        .check-item.fail .check { background: var(--danger-soft); color: var(--danger); }
+        .check-item.fail::after { content: "Missing"; margin-left: auto; font-size: 11.5px; font-weight: 800; color: var(--danger); }
+
+        /* ===== RECOMMENDATIONS ===== */
+        .rec-card { margin-bottom: 28px; }
+        .rec-head { display: flex; align-items: center; gap: 10px; font-size: 16px; font-weight: 800; margin-bottom: 16px; }
+        .rec-head svg { width: 20px; height: 20px; color: var(--warning); }
+
+        .rec-list { list-style: none; display: flex; flex-direction: column; gap: 10px; }
+        .rec-item {
+            display: flex; gap: 13px; align-items: flex-start;
+            background: var(--surface-2); border: 1px solid var(--border);
+            border-left: 4px solid var(--primary); border-radius: var(--radius-sm);
+            padding: 13px 16px; font-size: 13.5px; line-height: 1.6; color: var(--text-soft);
+            animation: fadeUp 0.4s ease backwards;
+        }
+        .rec-item .rec-num {
+            display: grid; place-items: center; width: 24px; height: 24px; flex-shrink: 0;
+            border-radius: 8px; background: var(--info-soft); color: var(--primary); font-size: 12px; font-weight: 900;
         }
 
-        .summary-box h3 {
-            margin-bottom: 12px;
-            color: #1e3a8a;
+        /* ===== TOAST ===== */
+        .toast-wrap {
+            position: fixed; bottom: 22px; right: 22px; z-index: 300;
+            display: flex; flex-direction: column; gap: 10px;
+        }
+        .toast {
+            display: flex; align-items: center; gap: 11px;
+            background: var(--surface); border: 1px solid var(--border);
+            border-radius: var(--radius-md); padding: 13px 18px; min-width: 280px; max-width: 380px;
+            box-shadow: var(--shadow-lg); font-size: 13.5px; font-weight: 600;
+            animation: toastIn 0.3s cubic-bezier(0.22, 1, 0.36, 1);
+        }
+        .toast.hide { animation: toastOut 0.3s ease forwards; }
+        .toast .t-icon { display: grid; place-items: center; width: 26px; height: 26px; border-radius: 50%; flex-shrink: 0; }
+        .toast.error .t-icon { background: var(--danger-soft); color: var(--danger); }
+        .toast.success .t-icon { background: var(--success-soft); color: var(--success); }
+        .toast.info .t-icon { background: var(--info-soft); color: var(--primary); }
+        .toast .t-icon svg { width: 15px; height: 15px; }
+
+        /* ===== FOOTER ===== */
+        footer { border-top: 1px solid var(--border); padding: 34px 0; text-align: center; }
+        footer .f-brand { display: inline-flex; align-items: center; gap: 8px; font-weight: 800; margin-bottom: 8px; }
+        footer p { font-size: 13px; color: var(--text-muted); }
+        footer .heart { color: var(--danger); }
+
+        /* ===== ANIMATIONS ===== */
+        @keyframes spin { to { transform: rotate(360deg); } }
+        @keyframes floatY {
+            0%, 100% { transform: translateY(0); }
+            50% { transform: translateY(-7px); }
+        }
+        @keyframes pulse {
+            0%, 100% { box-shadow: 0 0 0 0 rgba(16, 185, 129, 0.35); }
+            50% { box-shadow: 0 0 0 6px rgba(16, 185, 129, 0); }
+        }
+        @keyframes pulseRing {
+            0%, 100% { box-shadow: 0 0 0 0 rgba(99, 102, 241, 0.4); }
+            50% { box-shadow: 0 0 0 7px rgba(99, 102, 241, 0); }
+        }
+        @keyframes fadeUp {
+            from { opacity: 0; transform: translateY(14px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        @keyframes toastIn { from { opacity: 0; transform: translateX(30px); } to { opacity: 1; transform: translateX(0); } }
+        @keyframes toastOut { to { opacity: 0; transform: translateX(30px); } }
+
+        /* ===== RESPONSIVE ===== */
+        @media (max-width: 960px) {
+            .input-grid, .split-grid, .metric-grid { grid-template-columns: 1fr; }
+            .gauge-grid { grid-template-columns: repeat(2, 1fr); }
+            .ats-grid { grid-template-columns: 1fr; }
+            .gauge-overall .gauge-wrap { width: 150px; height: 150px; }
         }
 
-        .summary-box p {
-            line-height: 1.6;
-            color: #334155;
+        @media (max-width: 620px) {
+            .container { padding: 0 16px; }
+            .navbar-inner { height: 58px; }
+            .nav-links a { display: none; }
+            .panel { padding: 22px 18px; }
+            .hero { padding: 52px 16px 48px; }
+            .gauge-grid { grid-template-columns: 1fr; }
+            .gauge-wrap { width: 132px; height: 132px; }
+            .gauge-overall .gauge-wrap { width: 150px; height: 150px; }
+            .gauge-overall .gauge-value { font-size: 30px; }
+            .steps { gap: 8px; }
+            .step-label { display: none; }
+            .action-row { flex-direction: column; }
+            .toast-wrap { left: 16px; right: 16px; }
+            .toast { width: 100%; min-width: 0; }
         }
 
-
-        /* ==================================================
-           MATCH LEVEL
-        ================================================== */
-
-        .match-level {
-            display: inline-block;
-
-            margin-bottom: 15px;
-
-            padding: 8px 16px;
-
-            border-radius: 20px;
-
-            font-size: 14px;
-
-            font-weight: bold;
-
-            background: #e2e8f0;
-
-            color: #334155;
-        }
-
-        .match-low {
-            background: #fee2e2;
-            color: #991b1b;
-        }
-
-        .match-moderate {
-            background: #fef3c7;
-            color: #92400e;
-        }
-
-        .match-good {
-            background: #dbeafe;
-            color: #1e40af;
-        }
-
-        .match-excellent {
-            background: #dcfce7;
-            color: #166534;
-        }
-
-
-        /* ==================================================
-           SCORE GRID
-        ================================================== */
-
-        .score-grid {
-            display: grid;
-
-            grid-template-columns:
-                repeat(
-                    4,
-                    1fr
-                );
-
-            gap: 20px;
-        }
-
-
-        /* ==================================================
-           SCORE CARD
-        ================================================== */
-
-        .score-card {
-            padding: 25px;
-
-            border-radius: 14px;
-
-            background: #f8fafc;
-
-            text-align: center;
-
-            border: 1px solid #e2e8f0;
-        }
-
-        .score-card h3 {
-            font-size: 15px;
-
-            color: #64748b;
-
-            margin-bottom: 18px;
-        }
-
-
-        /* ==================================================
-           SCORE CIRCLE
-        ================================================== */
-
-        .circle {
-            width: 130px;
-            height: 130px;
-
-            border-radius: 50%;
-
-            margin: auto;
-
-            display: flex;
-
-            align-items: center;
-
-            justify-content: center;
-
-            background:
-                conic-gradient(
-                    #2563eb var(--score, 0%),
-                    #e2e8f0 0
-                );
-
-            position: relative;
-        }
-
-        .circle::before {
-            content: "";
-
-            width: 100px;
-            height: 100px;
-
-            border-radius: 50%;
-
-            background: white;
-
-            position: absolute;
-        }
-
-        .circle span {
-            position: relative;
-
-            z-index: 1;
-
-            font-size: 25px;
-
-            font-weight: bold;
-
-            color: #1e3a8a;
-        }
-
-
-        /* ==================================================
-           SCORE STATUS
-        ================================================== */
-
-        .score-status {
-            margin-top: 15px;
-
-            font-size: 14px;
-
-            font-weight: bold;
-
-            color: #64748b;
-        }
-
-
-        /* ==================================================
-           SKILL COVERAGE
-        ================================================== */
-
-        .skill-coverage {
-            margin-bottom: 25px;
-
-            padding: 22px;
-
-            background: #f8fafc;
-
-            border: 1px solid #e2e8f0;
-
-            border-radius: 12px;
-        }
-
-        .coverage-header {
-            display: flex;
-
-            justify-content: space-between;
-
-            align-items: center;
-
-            margin-bottom: 15px;
-        }
-
-        .coverage-header h3 {
-            color: #1e293b;
-        }
-
-        #skillCoverageText {
-            font-size: 20px;
-
-            font-weight: bold;
-
-            color: #2563eb;
-        }
-
-        .coverage-bar-background {
-            width: 100%;
-
-            height: 12px;
-
-            background: #e2e8f0;
-
-            border-radius: 10px;
-
-            overflow: hidden;
-        }
-
-        .coverage-bar {
-            width: 0%;
-
-            height: 100%;
-
-            background: #2563eb;
-
-            border-radius: 10px;
-
-            transition: width 0.6s ease;
-        }
-
-        #skillCoverageMessage {
-            margin-top: 10px;
-
-            font-size: 14px;
-
-            color: #64748b;
-        }
-
-
-        /* ==================================================
-           SKILLS
-        ================================================== */
-
-        .skills-container {
-            display: grid;
-
-            grid-template-columns:
-                1fr 1fr;
-
-            gap: 25px;
-        }
-
-        .skill-box {
-            padding: 22px;
-
-            border-radius: 12px;
-
-            background: #f8fafc;
-
-            border: 1px solid #e2e8f0;
-        }
-
-        .skill-box h3 {
-            margin-bottom: 18px;
-        }
-
-
-        /* ==================================================
-           SKILL BADGES
-        ================================================== */
-
-        .skill-badges {
-            display: flex;
-
-            flex-wrap: wrap;
-
-            gap: 10px;
-        }
-
-        .skill-badge {
-            display: inline-block;
-
-            padding: 8px 14px;
-
-            border-radius: 20px;
-
-            font-size: 14px;
-
-            font-weight: bold;
-        }
-
-        .matched-badge {
-            background: #dcfce7;
-
-            color: #166534;
-
-            border: 1px solid #86efac;
-        }
-
-        .missing-badge {
-            background: #fee2e2;
-
-            color: #991b1b;
-
-            border: 1px solid #fca5a5;
-        }
-
-        .empty-message {
-            color: #64748b;
-
-            font-size: 14px;
-        }
-
-
-        /* ==================================================
-           RECOMMENDATIONS
-        ================================================== */
-
-        .recommendations {
-            background: #f8fafc;
-
-            padding: 22px;
-
-            border-radius: 12px;
-
-            border: 1px solid #e2e8f0;
-        }
-
-        .recommendation-item {
-            background: white;
-
-            padding: 12px 15px;
-
-            margin-bottom: 10px;
-
-            border-radius: 8px;
-
-            border-left: 4px solid #2563eb;
-
-            list-style: none;
-
-            line-height: 1.5;
-        }
-
-
-        /* ==================================================
-           RESET BUTTON
-        ================================================== */
-
-        .reset-button {
-            width: 100%;
-
-            padding: 15px;
-
-            margin-top: 25px;
-
-            border: 2px solid #2563eb;
-
-            border-radius: 10px;
-
-            background: white;
-
-            color: #2563eb;
-
-            font-size: 16px;
-
-            font-weight: bold;
-
-            cursor: pointer;
-
-            transition: 0.2s;
-        }
-
-        .reset-button:hover {
-            background: #eff6ff;
-        }
-
-
-        /* ==================================================
-           FOOTER
-        ================================================== */
-
-        footer {
-            text-align: center;
-
-            padding: 30px;
-
-            color: #64748b;
-
-            font-size: 14px;
-        }
-
-
-        /* ==================================================
-           TABLET
-        ================================================== */
-
-        @media (max-width: 800px) {
-
-            .score-grid {
-                grid-template-columns:
-                    1fr 1fr;
-            }
-
-        }
-
-
-        /* ==================================================
-           MOBILE
-        ================================================== */
-
-        @media (max-width: 550px) {
-
-            header h1 {
-                font-size: 28px;
-            }
-
-            header p {
-                font-size: 14px;
-            }
-
-            .score-grid {
-                grid-template-columns:
-                    1fr;
-            }
-
-            .skills-container {
-                grid-template-columns:
-                    1fr;
-            }
-
-            .card {
-                padding: 20px;
-            }
-
-            .circle {
-                width: 120px;
-                height: 120px;
-            }
-
+        @media (prefers-reduced-motion: reduce) {
+            * { animation: none !important; transition: none !important; }
+            html { scroll-behavior: auto; }
         }
 
     </style>
 
 </head>
 
-
 <body>
 
+    <a class="skip-link" href="#analyze">Skip to analyzer</a>
 
-    <!-- ==================================================
-         HEADER
-    ================================================== -->
+    <nav class="navbar">
+        <div class="container navbar-inner">
+            <a class="brand" href="#top">
+                <span class="brand-mark">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M9 3H5a2 2 0 0 0-2 2v4m6-6h10a2 2 0 0 1 2 2v4M9 3v18m0 0h10a2 2 0 0 0 2-2v-4M9 21H5a2 2 0 0 1-2-2v-4m0 0h18"/></svg>
+                </span>
+                Resume Analyzer
+            </a>
 
-    <header>
+            <div class="nav-links">
+                <a href="#analyze">Analyzer</a>
+                <a href="#results">Results</a>
+                <button class="icon-btn" id="themeToggle" aria-label="Toggle theme">
+                    <svg class="icon-moon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>
+                    <svg class="icon-sun" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="4"/><path d="M12 2v2m0 16v2M4.93 4.93l1.41 1.41m11.32 11.32 1.41 1.41M2 12h2m16 0h2M6.34 17.66l-1.41 1.41M19.07 4.93l-1.41 1.41"/></svg>
+                </button>
+            </div>
+        </div>
+    </nav>
 
-        <h1>
-            AI Resume Analyzer
-        </h1>
+    <header class="hero" id="top">
+        <span class="hero-badge"><span class="dot"></span> AI-powered ATS optimization</span>
+        <h1>Turn your resume into a <span class="grad">job-winning</span> application</h1>
+        <p>Upload your PDF resume and get a professional AI analysis — ATS compatibility, skills detection, and personalized recommendations to strengthen your application.</p>
 
-        <p>
-            AI-powered Resume Analysis & Job Matching
-        </p>
-
+        <div class="hero-stats">
+            <span class="hero-stat">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 6V4m0 2a2 2 0 1 0 0 4m0-4a2 2 0 1 1 0 4m0 0v2m0-2a2 2 0 1 0 0 4m0-4a2 2 0 1 1 0 4m-6 8a2 2 0 1 0 0-4m0 4a2 2 0 1 1 0-4m0 4v-4m6 4a2 2 0 1 0 0-4m0 4a2 2 0 1 1 0-4m0 4v-2"/></svg>
+                Instant ATS scoring
+            </span>
+            <span class="hero-stat">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2a7 7 0 0 0-4 12.74V17a1 1 0 0 0 1 1h6a1 1 0 0 0 1-1v-2.26A7 7 0 0 0 12 2zM9 21h6"/></svg>
+                Smart ATS checks
+            </span>
+            <span class="hero-stat">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 12l2 2 4-4"/><circle cx="12" cy="12" r="10"/></svg>
+                90+ recognized skills
+            </span>
+        </div>
     </header>
 
-
-
-    <main class="container">
-
-
-        <!-- ==================================================
-             INPUT CARD
-        ================================================== -->
-
-        <div class="card">
-
-            <h2>
-                📄 Upload Your Resume
-            </h2>
-
-            <p class="input-description">
-                Upload your resume in PDF format for AI analysis.
-            </p>
-
-
-            <input
-                type="file"
-                id="resume"
-                class="file-input"
-                accept=".pdf"
-            >
-
-
-            <br>
-            <br>
-
-
-            <h2>
-                💼 Job Description
-            </h2>
-
-            <p class="input-description">
-                Paste the job description you want to compare your resume against.
-            </p>
-
-
-            <textarea
-                id="jobDescription"
-                placeholder="Paste the job description here..."
-                maxlength="5000"
-            ></textarea>
-
-
-            <div class="character-counter">
-
-                <span id="characterCount">
-                    0
-                </span>/5000 characters
-
-            </div>
-
-
-            <button
-                onclick="analyzeResume()"
-                id="analyzeButton"
-                class="analyze-button"
-            >
-
-                🔍 Analyze Resume
-
-            </button>
-
-
-            <p id="status"></p>
-
-
-
-            <!-- ==================================================
-                 PROGRESS
-            ================================================== -->
-
-            <div
-                class="progress-container"
-                id="progressContainer"
-            >
-
-                <div class="progress-title">
-                    ⏳ Resume Analysis Progress
-                </div>
-
-
-                <div
-                    class="progress-step"
-                    id="progressUpload"
-                >
-                    ○ Uploading resume
-                </div>
-
-
-                <div
-                    class="progress-step"
-                    id="progressExtract"
-                >
-                    ○ Extracting resume text
-                </div>
-
-
-                <div
-                    class="progress-step"
-                    id="progressAnalyze"
-                >
-                    ○ Comparing resume with job
-                </div>
-
-
-                <div
-                    class="progress-step"
-                    id="progressRecommend"
-                >
-                    ○ Generating recommendations
-                </div>
-
-
-                <div class="progress-bar-background">
-
-                    <div
-                        class="progress-bar"
-                        id="progressBar"
-                    ></div>
-
-                </div>
-
-
-                <div
-                    class="progress-percentage"
-                    id="progressPercentage"
-                >
-                    0%
-                </div>
-
-            </div>
-
-        </div>
-
-
-
-        <!-- ==================================================
-             RESULTS
-        ================================================== -->
-
-        <div
-            class="card"
-            id="results"
-            style="display: none;"
-        >
-
-            <h2>
-                📊 Analysis Results
-            </h2>
-
-
-            <!-- ==================================================
-                 SUMMARY
-            ================================================== -->
-
-            <div class="summary-box">
-
-                <h3>
-                    📌 Resume Strength Summary
-                </h3>
-
-
-                <div
-                    id="matchLevel"
-                    class="match-level"
-                >
-                    Waiting for analysis
-                </div>
-
-
-                <p id="resumeSummary">
-                    Waiting for analysis...
-                </p>
-
-            </div>
-
-
-
-            <!-- ==================================================
-                 SCORES
-            ================================================== -->
-
-            <div class="score-grid">
-
-
-                <div class="score-card">
-
-                    <h3>
-                        Overall Match
-                    </h3>
-
-
-                    <div
-                        class="circle"
-                        id="overallCircle"
-                    >
-
-                        <span id="overallScore">
-                            0%
+    <main>
+        <section class="block" id="analyze">
+            <div class="container">
+
+                <div class="panel">
+                    <div class="panel-head">
+                        <span class="panel-icon">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"/></svg>
                         </span>
+                        <div>
+                            <h2>Resume Analyzer</h2>
+                            <div class="sub">Upload a PDF resume to run the AI analysis.</div>
+                        </div>
+                    </div>
+
+                    <div class="input-grid">
+
+                        <div>
+                            <input type="file" id="fileInput" accept=".pdf" hidden>
+                            <div class="dropzone" id="dropzone" tabindex="0" role="button" aria-label="Upload PDF resume">
+                                <div class="dropzone-icon">
+                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M17 8l-5-5-5 5M12 3v12"/></svg>
+                                </div>
+                                <div class="dz-title">Drop your resume here</div>
+                                <div class="dz-hint">or <span class="dz-strong">browse files</span> — PDF only, max 10 MB</div>
+                            </div>
+                            <div id="fileCard" class="file-card" style="display:none;">
+                                <span class="file-icon">
+                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6"/></svg>
+                                </span>
+                                <div style="min-width:0;">
+                                    <div class="file-name" id="fileName"></div>
+                                    <div class="file-size" id="fileSize"></div>
+                                </div>
+                                <button class="file-remove" id="fileRemove" aria-label="Remove file">
+                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M18 6L6 18M6 6l12 12"/></svg>
+                                </button>
+                            </div>
+                        </div>
 
                     </div>
 
-
-                    <p
-                        class="score-status"
-                        id="overallStatus"
-                    >
-                        Waiting for analysis
-                    </p>
-
-                </div>
-
-
-
-                <div class="score-card">
-
-                    <h3>
-                        Skill Match
-                    </h3>
-
-
-                    <div
-                        class="circle"
-                        id="skillCircle"
-                    >
-
-                        <span id="skillScore">
-                            0%
-                        </span>
-
+                    <div class="action-row">
+                        <button class="btn btn-primary btn-block" id="analyzeBtn">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><path d="M21 21l-4.35-4.35"/></svg>
+                            Analyze Resume
+                        </button>
+                        <button class="btn btn-ghost" id="resetBtn">Reset</button>
                     </div>
 
+                    <div class="progress" id="progress">
+                        <div class="steps">
+                            <div class="step" id="stepUpload">
+                                <span class="step-node">1</span>
+                                <span class="step-label">Resume</span>
+                            </div>
+                            <span class="step-line" id="stepLine1"></span>
+                            <div class="step" id="stepMatch">
+                                <span class="step-node">2</span>
+                                <span class="step-label">Skills</span>
+                            </div>
+                            <span class="step-line" id="stepLine2"></span>
+                            <div class="step" id="stepAts">
+                                <span class="step-node">3</span>
+                                <span class="step-label">ATS check</span>
+                            </div>
+                            <span class="step-line" id="stepLine3"></span>
+                            <div class="step" id="stepDone">
+                                <span class="step-node">4</span>
+                                <span class="step-label">Done</span>
+                            </div>
+                        </div>
 
-                    <p
-                        class="score-status"
-                        id="skillStatus"
-                    >
-                        Waiting for analysis
-                    </p>
-
-                </div>
-
-
-
-                <div class="score-card">
-
-                    <h3>
-                        Semantic Match
-                    </h3>
-
-
-                    <div
-                        class="circle"
-                        id="semanticCircle"
-                    >
-
-                        <span id="semanticScore">
-                            0%
-                        </span>
-
+                        <div class="progress-bar">
+                            <div class="progress-bar-fill" id="progressFill"></div>
+                        </div>
+                        <div class="progress-meta">
+                            <span id="progressLabel">Preparing…</span>
+                            <span id="progressPct">0%</span>
+                        </div>
+                        <p class="progress-msg" id="progressMsg"></p>
                     </div>
 
-
-                    <p
-                        class="score-status"
-                        id="semanticStatus"
-                    >
-                        Waiting for analysis
-                    </p>
-
                 </div>
 
+                <div class="results" id="results">
+                    <div class="panel">
+                        <div class="result-head">
+                            <div>
+                                <h2>Analysis Results</h2>
+                                <div class="sub" id="resultMeta"></div>
+                            </div>
+                            <span class="match-badge match-moderate" id="matchBadge">Analyzing…</span>
+                        </div>
 
+                        <div class="summary-box">
+                            <div class="summary-title">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 9V5a3 3 0 0 0-3-3l-4 9v11h11.28a2 2 0 0 0 2-1.7l1.38-9a2 2 0 0 0-2-2.3zM7 22H4a2 2 0 0 1-2-2v-7a2 2 0 0 1 2-2h3"/></svg>
+                                Resume strength summary
+                            </div>
+                            <p id="resumeSummary">Waiting for analysis…</p>
+                        </div>
 
-                <div class="score-card">
+                        <div class="gauge-grid">
+                            <div class="gauge-card gauge-overall">
+                                <h3>Overall Match</h3>
+                                <div class="gauge-wrap">
+                                    <svg viewBox="0 0 120 120">
+                                        <circle class="gauge-track" cx="60" cy="60" r="52"></circle>
+                                        <circle class="gauge-fill" cx="60" cy="60" r="52" id="gaugeOverall"></circle>
+                                    </svg>
+                                    <span class="gauge-center"><span class="gauge-value"><span id="overallValue">0</span><small>%</small></span></span>
+                                </div>
+                                <div class="gauge-status" id="overallStatus">Waiting…</div>
+                            </div>
 
-                    <h3>
-                        ATS Score
-                    </h3>
+                            <div class="gauge-card">
+                                <h3>Skill Match</h3>
+                                <div class="gauge-wrap">
+                                    <svg viewBox="0 0 120 120">
+                                        <circle class="gauge-track" cx="60" cy="60" r="52"></circle>
+                                        <circle class="gauge-fill" cx="60" cy="60" r="52" id="gaugeSkill"></circle>
+                                    </svg>
+                                    <span class="gauge-center"><span class="gauge-value"><span id="skillValue">0</span><small>%</small></span></span>
+                                </div>
+                                <div class="gauge-status" id="skillStatus">Waiting…</div>
+                            </div>
 
+                            <div class="gauge-card">
+                                <h3>Semantic Match</h3>
+                                <div class="gauge-wrap">
+                                    <svg viewBox="0 0 120 120">
+                                        <circle class="gauge-track" cx="60" cy="60" r="52"></circle>
+                                        <circle class="gauge-fill" cx="60" cy="60" r="52" id="gaugeSemantic"></circle>
+                                    </svg>
+                                    <span class="gauge-center"><span class="gauge-value"><span id="semanticValue">0</span><small>%</small></span></span>
+                                </div>
+                                <div class="gauge-status" id="semanticStatus">Waiting…</div>
+                            </div>
 
-                    <div
-                        class="circle"
-                        id="atsCircle"
-                    >
+                            <div class="gauge-card">
+                                <h3>ATS Score</h3>
+                                <div class="gauge-wrap">
+                                    <svg viewBox="0 0 120 120">
+                                        <circle class="gauge-track" cx="60" cy="60" r="52"></circle>
+                                        <circle class="gauge-fill" cx="60" cy="60" r="52" id="gaugeAts"></circle>
+                                    </svg>
+                                    <span class="gauge-center"><span class="gauge-value"><span id="atsValue">0</span><small>%</small></span></span>
+                                </div>
+                                <div class="gauge-status" id="atsStatus">Waiting…</div>
+                            </div>
+                        </div>
 
-                        <span id="atsScore">
-                            0%
-                        </span>
+                        <div class="metric-grid">
+                            <div class="metric-card m-skill">
+                                <div class="metric-head">
+                                    <span class="m-label">
+                                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2l9 5v5.5C21 17.5 17 20.5 12 22c-5-1.5-9-4.5-9-9.5V7z"/></svg>
+                                        Skill coverage
+                                    </span>
+                                    <span class="m-value" id="coverageValue">0%</span>
+                                </div>
+                                <div class="bar"><div class="bar-fill" id="coverageBar"></div></div>
+                                <p id="coverageMsg">Waiting…</p>
+                            </div>
 
+                            <div class="metric-card m-coverage">
+                                <div class="metric-head">
+                                    <span class="m-label">
+                                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg>
+                                        Resume skills detected
+                                    </span>
+                                    <span class="m-value" id="resumeSkillCount">–</span>
+                                </div>
+                                <div class="bar"><div class="bar-fill" id="resumeSkillBar" style="background:linear-gradient(90deg,#6366f1,#06b6d4);"></div></div>
+                                <p>Skills automatically extracted from your resume.</p>
+                            </div>
+                        </div>
+
+                        <div class="split-grid">
+                            <div class="sub-card">
+                                <h3 class="matched">
+                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6L9 17l-5-5"/></svg>
+                                    Matched skills
+                                </h3>
+                                <div class="chips" id="matchedChips"></div>
+                            </div>
+                            <div class="sub-card">
+                                <h3 class="missing">
+                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 18L18 6M6 6l12 12"/></svg>
+                                    Missing skills
+                                </h3>
+                                <div class="chips" id="missingChips"></div>
+                            </div>
+                        </div>
+
+                        <div class="panel ats-card">
+                            <div class="rec-head">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg>
+                                ATS compatibility checklist
+                            </div>
+                            <div class="ats-grid" id="atsGrid"></div>
+                        </div>
+
+                        <div class="panel rec-card">
+                            <div class="rec-head">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9.1 9.8a5.5 5.5 0 0 1 7.4 0l3.4 3.4a3 3 0 0 1 0 4.2l-1.7 1.7a3 3 0 0 1-4.2 0L7 11.3a3 3 0 0 1 0-4.2 3 3 0 0 1 2.1-.9z"/><path d="M17.5 8.5c-.5 0-.8-.2-1-.6"/><path d="M12.8 10.9l3.4 3.4"/></svg>
+                                Personalized recommendations
+                            </div>
+                            <ol class="rec-list" id="recList"></ol>
+                        </div>
+
+                        <button class="btn btn-ghost btn-block" id="newAnalysisBtn">Start a new analysis</button>
                     </div>
-
-
-                    <p
-                        class="score-status"
-                        id="atsStatus"
-                    >
-                        Waiting for analysis
-                    </p>
-
                 </div>
-
 
             </div>
-
-
-            <br>
-            <br>
-
-
-
-            <!-- ==================================================
-                 SKILL COVERAGE
-            ================================================== -->
-
-            <div class="skill-coverage">
-
-                <div class="coverage-header">
-
-                    <h3>
-                        📊 Skill Coverage
-                    </h3>
-
-
-                    <span id="skillCoverageText">
-                        0%
-                    </span>
-
-                </div>
-
-
-                <div class="coverage-bar-background">
-
-                    <div
-                        id="skillCoverageBar"
-                        class="coverage-bar"
-                    ></div>
-
-                </div>
-
-
-                <p id="skillCoverageMessage">
-                    Waiting for analysis...
-                </p>
-
-            </div>
-
-
-
-            <!-- ==================================================
-                 SKILLS
-            ================================================== -->
-
-            <div class="skills-container">
-
-
-                <div class="skill-box">
-
-                    <h3>
-                        ✅ Matched Skills
-                    </h3>
-
-
-                    <div
-                        id="matchedSkills"
-                        class="skill-badges"
-                    ></div>
-
-                </div>
-
-
-
-                <div class="skill-box">
-
-                    <h3>
-                        ❌ Missing Skills
-                    </h3>
-
-
-                    <div
-                        id="missingSkills"
-                        class="skill-badges"
-                    ></div>
-
-                </div>
-
-
-            </div>
-
-
-            <br>
-
-
-
-            <!-- ==================================================
-                 RECOMMENDATIONS
-            ================================================== -->
-
-            <div class="recommendations">
-
-                <h3>
-                    💡 Recommendations
-                </h3>
-
-
-                <br>
-
-
-                <ul id="recommendations"></ul>
-
-            </div>
-
-
-
-            <!-- ==================================================
-                 RESET
-            ================================================== -->
-
-            <button
-                onclick="resetAnalysis()"
-                id="resetButton"
-                class="reset-button"
-            >
-
-                🔄 Analyze Another Resume
-
-            </button>
-
-
-        </div>
-
-
+        </section>
     </main>
 
-
-
-    <!-- ==================================================
-         FOOTER
-    ================================================== -->
-
     <footer>
-
-        AI Resume Analyzer | B.Tech CSE-AI Project
-
+        <div class="container">
+            <div class="f-brand">
+                <span class="brand-mark">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M9 3H5a2 2 0 0 0-2 2v4m6-6h10a2 2 0 0 1 2 2v4M9 3v18m0 0h10a2 2 0 0 0 2-2v-4M9 21H5a2 2 0 0 1-2-2v-4m0 0h18"/></svg>
+                </span>
+                Resume Analyzer
+            </div>
+            <p>AI-powered resume analysis &amp; ATS compatibility scoring. Built with <span class="heart">&hearts;</span> and FastAPI + sentence-transformers.</p>
+        </div>
     </footer>
 
-
+    <div class="toast-wrap" id="toastWrap"></div>
 
     <script>
 
+        const $ = (id) => document.getElementById(id);
 
-        /* ==================================================
-           CHARACTER COUNTER
-        ================================================== */
+        const GAUGE_CIRC = 2 * Math.PI * 52;
 
-        const jobDescriptionInput =
-            document.getElementById(
-                "jobDescription"
-            );
+        const state = {
+            file: null,
+            analyzing: false
+        };
 
+        document.documentElement.dataset.theme = localStorage.getItem("ra-theme") ||
+            (window.matchMedia && window.matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light");
 
-        const characterCount =
-            document.getElementById(
-                "characterCount"
-            );
+        $("themeToggle").addEventListener("click", () => {
+            const next = document.documentElement.dataset.theme === "dark" ? "light" : "dark";
+            document.documentElement.dataset.theme = next;
+            localStorage.setItem("ra-theme", next);
+        });
 
+        const dropzone = $("dropzone");
+        const fileInput = $("fileInput");
 
-        jobDescriptionInput.addEventListener(
-            "input",
-            function () {
+        function validateFile(file) {
+            if (!file) return "No file selected.";
+            if (!file.name.toLowerCase().endsWith(".pdf")) return "Only PDF files are supported.";
+            if (file.size > 10 * 1024 * 1024) return "File is larger than 10 MB.";
+            return null;
+        }
 
-                characterCount.innerText =
-                    this.value.length;
+        function formatSize(bytes) {
+            if (bytes < 1024) return bytes + " B";
+            if (bytes < 1024 * 1024) return (bytes / 1024).toFixed(1) + " KB";
+            return (bytes / (1024 * 1024)).toFixed(2) + " MB";
+        }
 
+        function setFile(file) {
+            state.file = file;
+            const err = validateFile(file);
+            if (err) {
+                state.file = null;
+                $("fileCard").style.display = "none";
+                dropzone.classList.add("error");
+                showToast(err, "error");
+                validateState();
+                return;
             }
+            dropzone.classList.remove("error");
+            $("fileCard").style.display = "flex";
+            $("fileName").textContent = file.name;
+            $("fileSize").textContent = formatSize(file.size);
+            showToast("Resume file selected: " + file.name, "success");
+            validateState();
+        }
+
+        dropzone.addEventListener("click", () => fileInput.click());
+        dropzone.addEventListener("keydown", (e) => {
+            if (e.key === "Enter" || e.key === " ") { e.preventDefault(); fileInput.click(); }
+        });
+
+        ["dragenter", "dragover"].forEach((ev) =>
+            dropzone.addEventListener(ev, (e) => { e.preventDefault(); dropzone.classList.add("dragover"); })
         );
+        ["dragleave", "drop"].forEach((ev) =>
+            dropzone.addEventListener(ev, (e) => { e.preventDefault(); dropzone.classList.remove("dragover"); })
+        );
+        dropzone.addEventListener("drop", (e) => {
+            const f = e.dataTransfer.files && e.dataTransfer.files[0];
+            if (f) setFile(f);
+        });
+        fileInput.addEventListener("change", () => {
+            if (fileInput.files[0]) setFile(fileInput.files[0]);
+        });
+        $("fileRemove").addEventListener("click", () => {
+            state.file = null;
+            fileInput.value = "";
+            $("fileCard").style.display = "none";
+            validateState();
+        });
 
-
-
-        /* ==================================================
-           SCORE CIRCLE
-        ================================================== */
-
-        function updateCircle(
-            circleId,
-            score
-        ) {
-
-            const circle =
-                document.getElementById(
-                    circleId
-                );
-
-
-            let safeScore =
-                Number(score);
-
-
-            if (isNaN(safeScore)) {
-
-                safeScore = 0;
-
-            }
-
-
-            safeScore =
-                Math.max(
-                    0,
-                    Math.min(
-                        100,
-                        safeScore
-                    )
-                );
-
-
-            circle.style.setProperty(
-                "--score",
-                safeScore + "%"
-            );
-
+        function validateState() {
+            $("analyzeBtn").disabled = !state.file || state.analyzing;
+            $("analyzeBtn").title = !state.file ? "Add a PDF resume to continue" : "";
         }
 
+        $("analyzeBtn").disabled = true;
 
-
-        /* ==================================================
-           SCORE STATUS
-        ================================================== */
-
-        function getScoreStatus(
-            score,
-            type
-        ) {
-
-            score =
-                Number(score);
-
-
-            if (type === "ats") {
-
-                if (score >= 80) {
-                    return "Excellent ATS Score";
-                }
-
-                if (score >= 60) {
-                    return "Good ATS Score";
-                }
-
-                if (score >= 40) {
-                    return "Needs ATS Improvement";
-                }
-
-                return "Poor ATS Compatibility";
-
-            }
-
-
-            if (score >= 80) {
-                return "Excellent Match";
-            }
-
-            if (score >= 60) {
-                return "Good Match";
-            }
-
-            if (score >= 40) {
-                return "Moderate Match";
-            }
-
-            return "Needs Improvement";
-
-        }
-
-
-
-        /* ==================================================
-           MATCH LEVEL
-        ================================================== */
-
-        function getMatchLevel(
-            score
-        ) {
-
-            score =
-                Number(score);
-
-
-            if (score >= 80) {
-
-                return {
-                    text: "🟢 EXCELLENT MATCH",
-                    className: "match-excellent"
-                };
-
-            }
-
-
-            if (score >= 60) {
-
-                return {
-                    text: "🔵 GOOD MATCH",
-                    className: "match-good"
-                };
-
-            }
-
-
-            if (score >= 40) {
-
-                return {
-                    text: "🟡 MODERATE MATCH",
-                    className: "match-moderate"
-                };
-
-            }
-
-
-            return {
-                text: "🔴 LOW MATCH",
-                className: "match-low"
+        function showToast(msg, type) {
+            const wrap = $("toastWrap");
+            const icons = {
+                success: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6L9 17l-5-5"/></svg>',
+                error: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M12 8v5m0 3h.01M10.3 3.9 1.8 18a2 2 0 0 0 1.7 3h17a2 2 0 0 0 1.7-3L13.7 3.9a2 2 0 0 0-3.4 0z"/></svg>',
+                info: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M12 8v8M12 8h.01"/></svg>'
             };
-
+            const el = document.createElement("div");
+            el.className = "toast " + (type || "info");
+            el.innerHTML = '<span class="t-icon">' + (icons[type] || icons.info) + "</span><span>" + msg + "</span>";
+            wrap.appendChild(el);
+            setTimeout(() => {
+                el.classList.add("hide");
+                setTimeout(() => el.remove(), 320);
+            }, 4200);
         }
 
+        let stepQueue = [];
 
-
-        /* ==================================================
-           RESUME SUMMARY
-        ================================================== */
-
-        function generateResumeSummary(
-            overall,
-            skill,
-            semantic,
-            ats,
-            missingSkills
-        ) {
-
-            let summary = "";
-
-
-            if (overall >= 80) {
-
-                summary +=
-                    "Your resume is highly relevant to this job. ";
-
-            }
-
-            else if (overall >= 60) {
-
-                summary +=
-                    "Your resume has a good overall match with this job. ";
-
-            }
-
-            else if (overall >= 40) {
-
-                summary +=
-                    "Your resume has a moderate match with this job. ";
-
-            }
-
-            else {
-
-                summary +=
-                    "Your resume needs improvement for this job. ";
-
-            }
-
-
-            if (skill >= 80) {
-
-                summary +=
-                    "Your technical skills align strongly with the job requirements. ";
-
-            }
-
-            else if (skill >= 60) {
-
-                summary +=
-                    "Your technical skills have a reasonable alignment with the job requirements. ";
-
-            }
-
-            else {
-
-                summary +=
-                    "Several job-specific technical skills are missing from your resume. ";
-
-            }
-
-
-            if (semantic >= 80) {
-
-                summary +=
-                    "Your resume content is strongly related to the target role. ";
-
-            }
-
-            else if (semantic >= 60) {
-
-                summary +=
-                    "Your resume content has a reasonable relationship with the target role. ";
-
-            }
-
-            else {
-
-                summary +=
-                    "Your project and experience descriptions could be better aligned with the target role. ";
-
-            }
-
-
-            if (ats >= 80) {
-
-                summary +=
-                    "Your ATS compatibility is strong.";
-
-            }
-
-            else if (ats >= 60) {
-
-                summary +=
-                    "Your ATS compatibility is good but can still be improved.";
-
-            }
-
-            else {
-
-                summary +=
-                    "Your resume needs improvement for ATS compatibility.";
-
-            }
-
-
-            if (
-                missingSkills &&
-                missingSkills.length > 0
-            ) {
-
-                summary +=
-                    " Focus on adding relevant experience or projects for " +
-                    missingSkills.length +
-                    " missing skill(s).";
-
-            }
-
-
-            return summary;
-
+        function setStep(id, active, done) {
+            const s = $(id);
+            s.classList.toggle("done", !!done);
+            s.classList.toggle("active", !!active);
         }
 
-
-
-        /* ==================================================
-           SKILL COVERAGE
-        ================================================== */
-
-        function updateSkillCoverage(
-            matchedSkills,
-            missingSkills
-        ) {
-
-            const matched =
-                Array.isArray(matchedSkills)
-                    ? matchedSkills.length
-                    : 0;
-
-
-            const missing =
-                Array.isArray(missingSkills)
-                    ? missingSkills.length
-                    : 0;
-
-
-            const total =
-                matched + missing;
-
-
-            let percentage = 0;
-
-
-            if (total > 0) {
-
-                percentage =
-                    Math.round(
-                        (matched / total) * 100
-                    );
-
-            }
-
-
-            document.getElementById(
-                "skillCoverageText"
-            ).innerText =
-                percentage + "%";
-
-
-            document.getElementById(
-                "skillCoverageBar"
-            ).style.width =
-                percentage + "%";
-
-
-            let message = "";
-
-
-            if (percentage >= 80) {
-
-                message =
-                    "Excellent skill coverage. Your resume matches most required skills.";
-
-            }
-
-            else if (percentage >= 60) {
-
-                message =
-                    "Good skill coverage, but a few relevant skills could be added.";
-
-            }
-
-            else if (percentage >= 40) {
-
-                message =
-                    "Moderate skill coverage. Consider adding more job-relevant skills.";
-
-            }
-
-            else {
-
-                message =
-                    "Low skill coverage. Focus on developing and highlighting the required skills.";
-
-            }
-
-
-            document.getElementById(
-                "skillCoverageMessage"
-            ).innerText =
-                message;
-
+        function setProgress(pct, label) {
+            $("progressFill").style.width = pct + "%";
+            $("progressPct").textContent = pct + "%";
+            $("progressLabel").textContent = label;
         }
 
-
-
-        /* ==================================================
-           PROGRESS
-        ================================================== */
-
-        function updateProgress(
-            percentage,
-            stepId,
-            message
-        ) {
-
-            const progressBar =
-                document.getElementById(
-                    "progressBar"
-                );
-
-
-            const progressPercentage =
-                document.getElementById(
-                    "progressPercentage"
-                );
-
-
-            const step =
-                document.getElementById(
-                    stepId
-                );
-
-
-            progressBar.style.width =
-                percentage + "%";
-
-
-            progressPercentage.innerText =
-                percentage + "%";
-
-
-            if (step) {
-
-                step.innerText =
-                    "⏳ " + message;
-
-
-                step.classList.add(
-                    "active"
-                );
-
-            }
-
-        }
-
-
-
-        function completeProgressStep(
-            stepId,
-            message
-        ) {
-
-            const step =
-                document.getElementById(
-                    stepId
-                );
-
-
-            if (step) {
-
-                step.innerText =
-                    "✓ " + message;
-
-
-                step.classList.remove(
-                    "active"
-                );
-
-
-                step.classList.add(
-                    "completed"
-                );
-
-            }
-
-        }
-
-
-
-        function resetProgress() {
-
-            const progressContainer =
-                document.getElementById(
-                    "progressContainer"
-                );
-
-
-            const progressBar =
-                document.getElementById(
-                    "progressBar"
-                );
-
-
-            const progressPercentage =
-                document.getElementById(
-                    "progressPercentage"
-                );
-
-
-            progressContainer.style.display =
-                "block";
-
-
-            progressBar.style.width =
-                "0%";
-
-
-            progressPercentage.innerText =
-                "0%";
-
-
-            const steps = [
-
-                "progressUpload",
-                "progressExtract",
-                "progressAnalyze",
-                "progressRecommend"
-
-            ];
-
-
-            steps.forEach(
-                function(id) {
-
-                    const step =
-                        document.getElementById(
-                            id
-                        );
-
-
-                    step.classList.remove(
-                        "active",
-                        "completed"
-                    );
-
+        function animateProgress(from, to, label, dur) {
+            return new Promise((resolve) => {
+                const start = performance.now();
+                function tick(now) {
+                    const t = Math.min((now - start) / dur, 1);
+                    const eased = 1 - Math.pow(1 - t, 3);
+                    setProgress(Math.round(from + (to - from) * eased), label);
+                    if (t < 1) requestAnimationFrame(tick);
+                    else resolve();
                 }
-            );
-
+                requestAnimationFrame(tick);
+            });
         }
-
-
-
-        /* ==================================================
-           MAIN ANALYSIS
-        ================================================== */
 
         async function analyzeResume() {
+            if (state.analyzing) return;
+            state.analyzing = true;
+            $("analyzeBtn").disabled = true;
+            $("analyzeBtn").innerHTML = '<span class="spinner"></span> Analyzing…';
 
+            const progress = $("progress");
+            progress.classList.add("open");
+            $("progressMsg").className = "progress-msg";
 
-            const resumeInput =
-                document.getElementById(
-                    "resume"
-                );
-
-
-            const jobDescription =
-                document.getElementById(
-                    "jobDescription"
-                );
-
-
-            const status =
-                document.getElementById(
-                    "status"
-                );
-
-
-            const button =
-                document.getElementById(
-                    "analyzeButton"
-                );
-
-
-            const results =
-                document.getElementById(
-                    "results"
-                );
-
-
-            const resumeFile =
-                resumeInput.files[0];
-
-
-            const jobText =
-                jobDescription.value.trim();
-
-
-
-            /* ==================================================
-               VALIDATION
-            ================================================== */
-
-            if (!resumeFile) {
-
-                status.innerText =
-                    "Please select a PDF resume.";
-
-                return;
-
-            }
-
-
-            if (
-                !resumeFile.name
-                    .toLowerCase()
-                    .endsWith(".pdf")
-            ) {
-
-                status.innerText =
-                    "Please upload a PDF file.";
-
-                return;
-
-            }
-
-
-            if (!jobText) {
-
-                status.innerText =
-                    "Please enter the job description.";
-
-                return;
-
-            }
-
-
-            if (jobText.length < 20) {
-
-                status.innerText =
-                    "Please enter a more detailed job description.";
-
-                return;
-
-            }
-
-
-
-            /* ==================================================
-               START
-            ================================================== */
-
-            status.innerText =
-                "⏳ Analyzing resume... Please wait.";
-
-
-            button.disabled =
-                true;
-
-
-            results.style.display =
-                "none";
-
-
-            resetProgress();
-
-
-            updateProgress(
-                10,
-                "progressUpload",
-                "Uploading resume"
-            );
-
-
+            setStep("stepUpload", true, false);
+            setStep("stepMatch", false, false);
+            setStep("stepAts", false, false);
+            setStep("stepDone", false, false);
+            ["stepLine1", "stepLine2", "stepLine3"].forEach((id) => $(id).style.setProperty("--line-progress", "0%"));
 
             try {
+                let resumeText = "";
 
+                const fd = new FormData();
+                fd.append("file", state.file);
+                await animateProgress(2, 22, "Uploading resume & extracting text…", 700);
 
-                /* ==================================================
-                   UPLOAD RESUME
-                ================================================== */
+                const up = await fetch("/upload-resume", { method: "POST", body: fd });
+                if (!up.ok) throw new Error("Resume upload failed (HTTP " + up.status + ").");
+                const upJson = await up.json();
+                resumeText = upJson.resume_text || "";
+                if (!resumeText.trim()) throw new Error("No text could be extracted from this PDF.");
 
-                const uploadData =
-                    new FormData();
+                setStep("stepUpload", false, true);
+                $("stepLine1").style.setProperty("--line-progress", "100%");
+                setStep("stepMatch", true, false);
 
+                const ad = new FormData();
+                ad.append("resume_text", resumeText);
+                await animateProgress(24, 58, "Extracting skills & analyzing content…", 900);
 
-                uploadData.append(
-                    "file",
-                    resumeFile
-                );
+                const [analyzeRes, atsRes] = await Promise.all([
+                    fetch("/analyze", { method: "POST", body: ad }),
+                    fetch("/ats-analysis", { method: "POST", body: ad })
+                ]);
 
+                if (!analyzeRes.ok) throw new Error("Analysis failed (HTTP " + analyzeRes.status + ").");
+                const result = await analyzeRes.json();
 
-                const uploadResponse =
-                    await fetch(
-                        "/upload-resume",
-                        {
-                            method: "POST",
-                            body: uploadData
-                        }
-                    );
+                let atsDetail = null;
+                if (atsRes.ok) atsDetail = await atsRes.json();
 
+                setStep("stepMatch", false, true);
+                $("stepLine2").style.setProperty("--line-progress", "100%");
+                setStep("stepAts", true, false);
+                await animateProgress(62, 86, "Verifying ATS compatibility…", 600);
 
-                if (!uploadResponse.ok) {
-
-                    throw new Error(
-                        "Resume upload failed."
-                    );
-
+                if (!result || typeof result.overall_match_score === "undefined") {
+                    throw new Error("The analysis returned unexpected data.");
                 }
 
-
-                const uploadedResume =
-                    await uploadResponse.json();
-
-
-                completeProgressStep(
-                    "progressUpload",
-                    "Resume uploaded"
-                );
-
-
-                updateProgress(
-                    30,
-                    "progressExtract",
-                    "Extracting resume text"
-                );
-
-
-                const resumeText =
-                    uploadedResume.resume_text;
-
-
-                if (!resumeText) {
-
-                    throw new Error(
-                        "Could not extract text from resume."
-                    );
-
-                }
-
-
-                completeProgressStep(
-                    "progressExtract",
-                    "Resume text extracted"
-                );
-
-
-                updateProgress(
-                    50,
-                    "progressAnalyze",
-                    "Comparing resume with job"
-                );
-
-
-
-                /* ==================================================
-                   ANALYSIS
-                ================================================== */
-
-                const analysisData =
-                    new FormData();
-
-
-                analysisData.append(
-                    "resume_text",
-                    resumeText
-                );
-
-
-                analysisData.append(
-                    "job_description",
-                    jobText
-                );
-
-
-                updateProgress(
-                    65,
-                    "progressAnalyze",
-                    "Analyzing skills and semantic match"
-                );
-
-
-                const analysisResponse =
-                    await fetch(
-                        "/analyze",
-                        {
-                            method: "POST",
-                            body: analysisData
-                        }
-                    );
-
-
-                if (!analysisResponse.ok) {
-
-                    const errorText =
-                        await analysisResponse.text();
-
-
-                    console.error(
-                        "Backend error:",
-                        errorText
-                    );
-
-
-                    throw new Error(
-                        "Resume analysis failed."
-                    );
-
-                }
-
-
-                const result =
-                    await analysisResponse.json();
-
-
-                console.log(
-                    "Analysis Result:",
-                    result
-                );
-
-
-                completeProgressStep(
-                    "progressAnalyze",
-                    "Resume and job analyzed"
-                );
-
-
-                updateProgress(
-                    85,
-                    "progressRecommend",
-                    "Generating recommendations"
-                );
-
-
-
-                /* ==================================================
-                   SCORES
-                ================================================== */
-
-                const overall =
-                    Number(
-                        result.overall_match_score
-                    );
-
-
-                const skill =
-                    Number(
-                        result.skill_match_score
-                    );
-
-
-                const semantic =
-                    Number(
-                        result.semantic_match_score
-                    );
-
-
-                const ats =
-                    Number(
-                        result.ats_score
-                    );
-
-
-
-                /* ==================================================
-                   DISPLAY SCORES
-                ================================================== */
-
-                document.getElementById(
-                    "overallScore"
-                ).innerText =
-                    overall + "%";
-
-
-                document.getElementById(
-                    "skillScore"
-                ).innerText =
-                    skill + "%";
-
-
-                document.getElementById(
-                    "semanticScore"
-                ).innerText =
-                    semantic + "%";
-
-
-                document.getElementById(
-                    "atsScore"
-                ).innerText =
-                    ats + "%";
-
-
-
-                /* ==================================================
-                   CIRCLES
-                ================================================== */
-
-                updateCircle(
-                    "overallCircle",
-                    overall
-                );
-
-
-                updateCircle(
-                    "skillCircle",
-                    skill
-                );
-
-
-                updateCircle(
-                    "semanticCircle",
-                    semantic
-                );
-
-
-                updateCircle(
-                    "atsCircle",
-                    ats
-                );
-
-
-
-                /* ==================================================
-                   SCORE STATUS
-                ================================================== */
-
-                document.getElementById(
-                    "overallStatus"
-                ).innerText =
-                    getScoreStatus(
-                        overall,
-                        "overall"
-                    );
-
-
-                document.getElementById(
-                    "skillStatus"
-                ).innerText =
-                    getScoreStatus(
-                        skill,
-                        "skill"
-                    );
-
-
-                document.getElementById(
-                    "semanticStatus"
-                ).innerText =
-                    getScoreStatus(
-                        semantic,
-                        "semantic"
-                    );
-
-
-                document.getElementById(
-                    "atsStatus"
-                ).innerText =
-                    getScoreStatus(
-                        ats,
-                        "ats"
-                    );
-
-
-
-                /* ==================================================
-                   MATCH LEVEL
-                ================================================== */
-
-                const matchLevel =
-                    getMatchLevel(
-                        overall
-                    );
-
-
-                const matchLevelElement =
-                    document.getElementById(
-                        "matchLevel"
-                    );
-
-
-                matchLevelElement.innerText =
-                    matchLevel.text;
-
-
-                matchLevelElement.className =
-                    "match-level " +
-                    matchLevel.className;
-
-
-
-                /* ==================================================
-                   SUMMARY
-                ================================================== */
-
-                const summary =
-                    generateResumeSummary(
-                        overall,
-                        skill,
-                        semantic,
-                        ats,
-                        result.missing_skills
-                    );
-
-
-                document.getElementById(
-                    "resumeSummary"
-                ).innerText =
-                    summary;
-
-
-
-                /* ==================================================
-                   MATCHED SKILLS
-                ================================================== */
-
-                const matchedSkills =
-                    document.getElementById(
-                        "matchedSkills"
-                    );
-
-
-                matchedSkills.innerHTML =
-                    "";
-
-
-                if (
-                    Array.isArray(
-                        result.matched_skills
-                    ) &&
-                    result.matched_skills.length > 0
-                ) {
-
-                    result.matched_skills.forEach(
-                        function(skill) {
-
-                            const badge =
-                                document.createElement(
-                                    "span"
-                                );
-
-
-                            badge.className =
-                                "skill-badge matched-badge";
-
-
-                            badge.innerText =
-                                "✓ " + skill;
-
-
-                            matchedSkills.appendChild(
-                                badge
-                            );
-
-                        }
-                    );
-
-                }
-
-                else {
-
-                    matchedSkills.innerHTML =
-                        '<span class="empty-message">No matching skills found.</span>';
-
-                }
-
-
-
-                /* ==================================================
-                   MISSING SKILLS
-                ================================================== */
-
-                const missingSkills =
-                    document.getElementById(
-                        "missingSkills"
-                    );
-
-
-                missingSkills.innerHTML =
-                    "";
-
-
-                if (
-                    Array.isArray(
-                        result.missing_skills
-                    ) &&
-                    result.missing_skills.length > 0
-                ) {
-
-                    result.missing_skills.forEach(
-                        function(skill) {
-
-                            const badge =
-                                document.createElement(
-                                    "span"
-                                );
-
-
-                            badge.className =
-                                "skill-badge missing-badge";
-
-
-                            badge.innerText =
-                                "✕ " + skill;
-
-
-                            missingSkills.appendChild(
-                                badge
-                            );
-
-                        }
-                    );
-
-                }
-
-                else {
-
-                    missingSkills.innerHTML =
-                        '<span class="empty-message">No missing skills. Great job!</span>';
-
-                }
-
-
-
-                /* ==================================================
-                   SKILL COVERAGE
-                ================================================== */
-
-                updateSkillCoverage(
-                    result.matched_skills,
-                    result.missing_skills
-                );
-
-
-
-                /* ==================================================
-                   RECOMMENDATIONS
-                ================================================== */
-
-                const recommendations =
-                    document.getElementById(
-                        "recommendations"
-                    );
-
-
-                recommendations.innerHTML =
-                    "";
-
-
-                if (
-                    Array.isArray(
-                        result.recommendations
-                    ) &&
-                    result.recommendations.length > 0
-                ) {
-
-                    result.recommendations.forEach(
-                        function(recommendation) {
-
-                            const li =
-                                document.createElement(
-                                    "li"
-                                );
-
-
-                            li.className =
-                                "recommendation-item";
-
-
-                            li.innerText =
-                                "💡 " +
-                                recommendation;
-
-
-                            recommendations.appendChild(
-                                li
-                            );
-
-                        }
-                    );
-
-                }
-
-                else {
-
-                    recommendations.innerHTML =
-                        '<li class="recommendation-item">Your resume looks good for this job. Keep improving your relevant skills.</li>';
-
-                }
-
-
-
-                /* ==================================================
-                   COMPLETE PROGRESS
-                ================================================== */
-
-                completeProgressStep(
-                    "progressRecommend",
-                    "Recommendations generated"
-                );
-
-
-                document.getElementById(
-                    "progressBar"
-                ).style.width =
-                    "100%";
-
-
-                document.getElementById(
-                    "progressPercentage"
-                ).innerText =
-                    "100%";
-
-
-                results.style.display =
-                    "block";
-
-
-                status.innerText =
-                    "✅ Analysis completed successfully!";
-
-
-                results.scrollIntoView({
-                    behavior: "smooth"
-                });
-
+                setStep("stepAts", false, true);
+                $("stepLine3").style.setProperty("--line-progress", "100%");
+                await animateProgress(88, 100, "Compiling recommendations…", 500);
+                setStep("stepDone", true, true);
+
+                renderResults(result, atsDetail, state.file.name);
+                $("progressMsg").className = "progress-msg success";
+                $("progressMsg").textContent = "Analysis completed successfully.";
+                $("results").scrollIntoView({ behavior: "smooth" });
+            } catch (err) {
+                console.error(err);
+                $("progressMsg").className = "progress-msg error";
+                $("progressMsg").textContent = "Analysis failed: " + err.message;
+                showToast(err.message, "error");
+            } finally {
+                state.analyzing = false;
+                validateState();
+                $("analyzeBtn").innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><path d="M21 21l-4.35-4.35"/></svg> Analyze Resume';
             }
-
-
-            catch (error) {
-
-                console.error(
-                    "Analysis Error:",
-                    error
-                );
-
-
-                status.innerText =
-                    "❌ Error: " +
-                    error.message;
-
-            }
-
-
-            finally {
-
-                button.disabled =
-                    false;
-
-            }
-
         }
 
-
-
-        /* ==================================================
-           RESET ANALYSIS
-        ================================================== */
-
-        function resetAnalysis() {
-
-
-            document.getElementById(
-                "resume"
-            ).value = "";
-
-
-            document.getElementById(
-                "jobDescription"
-            ).value = "";
-
-
-            document.getElementById(
-                "characterCount"
-            ).innerText =
-                "0";
-
-
-            document.getElementById(
-                "results"
-            ).style.display =
-                "none";
-
-
-            document.getElementById(
-                "status"
-            ).innerText =
-                "";
-
-
-            document.getElementById(
-                "progressContainer"
-            ).style.display =
-                "none";
-
-
-            document.getElementById(
-                "progressBar"
-            ).style.width =
-                "0%";
-
-
-            document.getElementById(
-                "progressPercentage"
-            ).innerText =
-                "0%";
-
-
-            document.getElementById(
-                "overallScore"
-            ).innerText =
-                "0%";
-
-
-            document.getElementById(
-                "skillScore"
-            ).innerText =
-                "0%";
-
-
-            document.getElementById(
-                "semanticScore"
-            ).innerText =
-                "0%";
-
-
-            document.getElementById(
-                "atsScore"
-            ).innerText =
-                "0%";
-
-
-            updateCircle(
-                "overallCircle",
-                0
-            );
-
-
-            updateCircle(
-                "skillCircle",
-                0
-            );
-
-
-            updateCircle(
-                "semanticCircle",
-                0
-            );
-
-
-            updateCircle(
-                "atsCircle",
-                0
-            );
-
-
-            document.getElementById(
-                "overallStatus"
-            ).innerText =
-                "Waiting for analysis";
-
-
-            document.getElementById(
-                "skillStatus"
-            ).innerText =
-                "Waiting for analysis";
-
-
-            document.getElementById(
-                "semanticStatus"
-            ).innerText =
-                "Waiting for analysis";
-
-
-            document.getElementById(
-                "atsStatus"
-            ).innerText =
-                "Waiting for analysis";
-
-
-            document.getElementById(
-                "matchLevel"
-            ).innerText =
-                "Waiting for analysis";
-
-
-            document.getElementById(
-                "matchLevel"
-            ).className =
-                "match-level";
-
-
-            document.getElementById(
-                "resumeSummary"
-            ).innerText =
-                "Waiting for analysis...";
-
-
-            document.getElementById(
-                "matchedSkills"
-            ).innerHTML =
-                "";
-
-
-            document.getElementById(
-                "missingSkills"
-            ).innerHTML =
-                "";
-
-
-            document.getElementById(
-                "recommendations"
-            ).innerHTML =
-                "";
-
-
-            document.getElementById(
-                "skillCoverageText"
-            ).innerText =
-                "0%";
-
-
-            document.getElementById(
-                "skillCoverageBar"
-            ).style.width =
-                "0%";
-
-
-            document.getElementById(
-                "skillCoverageMessage"
-            ).innerText =
-                "Waiting for analysis...";
-
-
-            window.scrollTo({
-
-                top: 0,
-
-                behavior: "smooth"
-
+        function scoreColor(v) {
+            if (v >= 75) return "#10b981";
+            if (v >= 50) return "#f59e0b";
+            return "#ef4444";
+        }
+
+        function setGauge(el, value) {
+            const v = Math.max(0, Math.min(100, Number(value) || 0));
+            el.style.stroke = scoreColor(v);
+            el.style.strokeDashoffset = GAUGE_CIRC * (1 - v / 100);
+        }
+
+        function setGaugeValue(el, value) { setGauge(el, value); }
+
+        function scoreStatus(v, label) {
+            if (v >= 80) return "Excellent " + label;
+            if (v >= 60) return "Good " + label;
+            if (v >= 40) return "Moderate " + label;
+            return "Needs work";
+        }
+
+        function badgeFor(v) {
+            if (v >= 80) return { cls: "match-excellent", label: "Excellent match" };
+            if (v >= 60) return { cls: "match-good", label: "Good match" };
+            if (v >= 40) return { cls: "match-moderate", label: "Moderate match" };
+            return { cls: "match-low", label: "Low match" };
+        }
+
+        function chipsFor(list, kind) {
+            const el = document.createElement("span");
+            if (!Array.isArray(list) || list.length === 0) {
+                el.className = "empty-hint";
+                el.textContent = kind === "missing"
+                    ? "No missing skills — great coverage!"
+                    : "No matched skills found.";
+                return el;
+            }
+            const wrap = document.createElement("div");
+            wrap.className = "chips";
+            const icon = kind === "matched"
+                ? '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6L9 17l-5-5"/></svg>'
+                : '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M6 18L18 6M6 6l12 12"/></svg>';
+            list.forEach((s, i) => {
+                const c = document.createElement("span");
+                c.className = "chip " + (kind === "matched" ? "chip-matched" : "chip-missing");
+                c.style.animationDelay = (i * 40) + "ms";
+                c.innerHTML = icon + "<span>" + escapeHtml(s) + "</span>";
+                wrap.appendChild(c);
+            });
+            return wrap;
+        }
+
+        function escapeHtml(s) {
+            return String(s).replace(/[&<>"']/g, (c) => ({
+                "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;"
+            }[c]));
+        }
+
+        function renderResults(r, atsDetail, sourceLabel) {
+            const resumeOnly = !!r.resume_only;
+            const overall = Number(r.overall_match_score) || 0;
+            const skill = Number(r.skill_match_score) || 0;
+            const semantic = Number(r.semantic_match_score) || 0;
+            const ats = Number(r.ats_score) || 0;
+
+            const rSkills = Array.isArray(r.resume_skills) ? r.resume_skills : [];
+
+            $("results").classList.add("open");
+            $("resultMeta").textContent = "Resume file: " + sourceLabel + (resumeOnly ? " — Resume-only analysis" : "");
+
+            const hero = resumeOnly ? ats : overall;
+            const badge = badgeFor(hero);
+            const mb = $("matchBadge");
+            mb.className = "match-badge " + badge.cls;
+            mb.innerHTML =
+                '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><path d="M22 4L12 14.01l-3-3"/></svg>' +
+                (resumeOnly ? badge.label.replace("match", "ATS score") : badge.label);
+
+            $("overallValue").textContent = hero.toFixed(0);
+            $("skillValue").textContent = skill.toFixed(0);
+            $("semanticValue").textContent = semantic.toFixed(0);
+            $("atsValue").textContent = ats.toFixed(0);
+
+            setGauge($("gaugeOverall"), hero);
+            setGauge($("gaugeSkill"), skill);
+            setGauge($("gaugeSemantic"), semantic);
+            setGauge($("gaugeAts"), ats);
+
+            $("overallStatus").textContent = resumeOnly ? scoreStatus(ats, "ATS score") : scoreStatus(overall, "");
+            $("skillStatus").textContent = scoreStatus(skill, "skill match");
+            $("semanticStatus").textContent = scoreStatus(semantic, "semantic match");
+            $("atsStatus").textContent = scoreStatus(ats, "ATS score");
+
+            const overallTitle = $("gaugeOverall").closest(".gauge-card").querySelector("h3");
+            overallTitle.textContent = resumeOnly ? "ATS Score" : "Overall Match";
+
+            ["gaugeSkill", "gaugeSemantic", "gaugeAts"].forEach((id) => {
+                $(id).closest(".gauge-card").style.display = resumeOnly ? "none" : "";
             });
 
+            $("coverageBar").closest(".metric-card").style.display = resumeOnly ? "none" : "";
+            $("matchedChips").closest(".split-grid").style.display = resumeOnly ? "none" : "";
+
+            $("resumeSummary").textContent = resumeOnly
+                ? buildResumeSummary(ats, rSkills, atsDetail)
+                : buildSummary(overall, skill, semantic, ats, r.missing_skills);
+
+            const matched = Array.isArray(r.matched_skills) ? r.matched_skills : [];
+            const missing = Array.isArray(r.missing_skills) ? r.missing_skills : [];
+            const coverage = matched.length + missing.length > 0
+                ? Math.round((matched.length / (matched.length + missing.length)) * 100)
+                : 0;
+
+            $("coverageValue").textContent = coverage + "%";
+            $("coverageBar").style.width = coverage + "%";
+            $("coverageMsg").textContent = coverage >= 80
+                ? "Excellent coverage — your resume covers most required skills."
+                : coverage >= 60
+                    ? "Good coverage, but a few in-demand skills could be highlighted."
+                    : coverage >= 40
+                        ? "Moderate coverage — consider showcasing more job-relevant skills."
+                        : "Low coverage — focus on developing and listing the required skills.";
+
+            $("resumeSkillCount").textContent = rSkills.length;
+            $("resumeSkillBar").style.width = Math.min(100, rSkills.length * 8) + "%";
+
+            const mc = $("matchedChips");
+            mc.innerHTML = "";
+            mc.appendChild(chipsFor(matched, "matched"));
+
+            const xc = $("missingChips");
+            xc.innerHTML = "";
+            xc.appendChild(chipsFor(missing, "missing"));
+
+            renderAts(atsDetail);
+
+            const recs = Array.isArray(r.recommendations) ? r.recommendations : [];
+            const rl = $("recList");
+            rl.innerHTML = "";
+            if (recs.length === 0) {
+                const li = document.createElement("li");
+                li.className = "rec-item";
+                li.innerHTML = '<span class="rec-num">!</span><span>' + (resumeOnly ? "Your resume looks strong overall. Keep refining your projects and quantifying results." : "Your resume looks strong for this role. Keep refining your projects and quantifying results.") + '</span>';
+                rl.appendChild(li);
+            } else {
+                recs.forEach((rec, i) => {
+                    const li = document.createElement("li");
+                    li.className = "rec-item";
+                    li.style.animationDelay = (i * 60) + "ms";
+                    li.innerHTML = '<span class="rec-num">' + (i + 1) + '</span><span>' + escapeHtml(rec) + "</span>";
+                    rl.appendChild(li);
+                });
+            }
         }
+
+        function buildResumeSummary(ats, skills, atsDetail) {
+            let s = "";
+            if (ats >= 80) s += "Your resume is highly ATS-compatible, with clear contact details and standard sections. ";
+            else if (ats >= 60) s += "Your resume has a solid ATS structure, though a few details could be tightened. ";
+            else s += "Your resume needs more ATS-friendly formatting, plus clear contact and section details. ";
+
+            s += "The analyzer detected " + skills.length + " recognized skill" + (skills.length === 1 ? "" : "s") + (skills.length > 0 ? " across your resume" : "") + ".";
+
+            if (atsDetail && !atsDetail.email_found) s += " Add a clear email address.";
+            if (atsDetail && !atsDetail.phone_found) s += " Include a phone number.";
+            return s;
+        }
+
+        function buildSummary(overall, skill, semantic, ats, missing) {
+            let s = "";
+            if (overall >= 80) s += "Your resume is a strong match for this role. ";
+            else if (overall >= 60) s += "Your resume aligns well with this job. ";
+            else if (overall >= 40) s += "Your resume is a moderate match for this role. ";
+            else s += "Your resume currently needs significant alignment with this role. ";
+
+            if (skill >= 80) s += "Your technical skills map closely to the job requirements. ";
+            else if (skill >= 60) s += "Your technical skills are reasonably aligned with the requirements. ";
+            else s += "Several job-critical skills are missing from your resume. ";
+
+            if (semantic >= 80) s += "The content and language of your resume strongly resemble the target position. ";
+            else if (semantic >= 60) s += "The content direction matches the target role reasonably well. ";
+            else s += "Try reworking project and experience descriptions to mirror the target role's terminology. ";
+
+            if (ats >= 80) s += "Your ATS compatibility is excellent.";
+            else if (ats >= 60) s += "Your ATS compatibility is good but improvable.";
+            else s += "Your resume should be restructured for better ATS readability.";
+
+            if (Array.isArray(missing) && missing.length > 0) {
+                s += " Prioritize adding experience or projects for " + missing.length + " missing skill" + (missing.length > 1 ? "s" : "") + ".";
+            }
+            return s;
+        }
+
+        function renderAts(detail) {
+            const grid = $("atsGrid");
+            grid.innerHTML = "";
+
+            function item(label, ok) {
+                const d = document.createElement("div");
+                d.className = "check-item " + (ok ? "ok" : "fail");
+                d.innerHTML = '<span class="check">' + (ok ? "&#10003;" : "&#10007;") + "</span><span>" + label + "</span>";
+                return d;
+            }
+
+            if (!detail || typeof detail.ats_score === "undefined") {
+                grid.appendChild(item("Email address", false));
+                grid.appendChild(item("Phone number", false));
+                ["Education", "Work experience", "Projects", "Skills", "Certifications"].forEach((sec) => grid.appendChild(item(sec + " section", false)));
+                return;
+            }
+
+            grid.appendChild(item("Contact email", !!detail.email_found));
+            grid.appendChild(item("Phone number", !!detail.phone_found));
+
+            const sections = detail.sections || {};
+            const order = { education: "Education", experience: "Work experience", projects: "Projects", skills: "Skills", certifications: "Certifications" };
+            Object.keys(order).forEach((key) => grid.appendChild(item(order[key] + " section", !!sections[key])));
+        }
+
+        $("analyzeBtn").addEventListener("click", analyzeResume);
+
+        function resetAll() {
+            state.analyzing = false;
+            state.file = null;
+            fileInput.value = "";
+            $("fileCard").style.display = "none";
+            dropzone.classList.remove("error", "dragover");
+
+            const p = $("progress");
+            p.classList.remove("open");
+            setProgress(0, "Preparing…");
+            $("progressMsg").className = "progress-msg";
+            $("progressMsg").textContent = "";
+            ["stepUpload", "stepMatch", "stepAts", "stepDone"].forEach((id) => { setStep(id, false, false); });
+            ["stepLine1", "stepLine2", "stepLine3"].forEach((id) => $(id).style.setProperty("--line-progress", "0%"));
+
+            $("results").classList.remove("open");
+            ["gaugeSkill", "gaugeSemantic", "gaugeAts"].forEach((id) => {
+                $(id).closest(".gauge-card").style.display = "";
+            });
+            $("coverageBar").closest(".metric-card").style.display = "";
+            $("matchedChips").closest(".split-grid").style.display = "";
+            const overallTitle = $("gaugeOverall").closest(".gauge-card").querySelector("h3");
+            overallTitle.textContent = "Overall Match";
+            validateState();
+            window.scrollTo({ top: 0, behavior: "smooth" });
+        }
+
+        $("resetBtn").addEventListener("click", resetAll);
+        $("newAnalysisBtn").addEventListener("click", resetAll);
+
+        validateState();
 
     </script>
 

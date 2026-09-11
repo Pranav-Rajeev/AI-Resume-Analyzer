@@ -209,7 +209,7 @@ async def semantic_match(
 @app.post("/analyze")
 async def analyze_resume(
     resume_text: str = Form(...),
-    job_description: str = Form(...)
+    job_description: str = Form("")
 ):
 
     # --------------------------------------------------------
@@ -222,39 +222,53 @@ async def analyze_resume(
 
 
     # --------------------------------------------------------
-    # 2. Extract job skills
+    # 2. Detect analysis mode
     # --------------------------------------------------------
 
-    job_skills = extract_skills(
-        job_description
+    # When no job description is provided, the analysis runs
+    # in resume-only mode (ATS, skills, recommendations).
+
+    resume_only = not bool(
+        job_description.strip()
     )
 
 
     # --------------------------------------------------------
-    # 3. Calculate skill matching
+    # 3. Match against job (optional)
     # --------------------------------------------------------
 
-    skill_result = calculate_match(
-        resume_skills,
-        job_skills
-    )
+    if resume_only:
+
+        skill_result = {
+            "match_score": 0,
+            "matched_skills": [],
+            "missing_skills": []
+        }
+
+        semantic_score = 0.0
+
+    else:
+
+        job_skills = extract_skills(
+            job_description
+        )
+
+        skill_result = calculate_match(
+            resume_skills,
+            job_skills
+        )
+
+        semantic_score = calculate_semantic_similarity(
+            resume_text,
+            job_description
+        )
 
 
     skill_score = skill_result["match_score"]
 
 
     # --------------------------------------------------------
-    # 4. AI semantic matching
-    # --------------------------------------------------------
-
-    semantic_score = calculate_semantic_similarity(
-        resume_text,
-        job_description
-    )
-
-
-    # --------------------------------------------------------
-    # 5. Calculate overall score
+    # 4. Calculate overall score
     # --------------------------------------------------------
 
     overall_score = calculate_overall_score(
@@ -264,7 +278,7 @@ async def analyze_resume(
 
 
     # --------------------------------------------------------
-    # 6. ATS analysis
+    # 5. ATS analysis
     # --------------------------------------------------------
 
     # IMPORTANT:
@@ -277,22 +291,25 @@ async def analyze_resume(
 
 
     # --------------------------------------------------------
-    # 7. Generate recommendations
+    # 6. Generate recommendations
     # --------------------------------------------------------
 
     recommendations = generate_recommendations(
         skill_result["missing_skills"],
         ats_result,
         skill_score,
-        semantic_score
+        semantic_score,
+        resume_only=resume_only
     )
 
 
     # --------------------------------------------------------
-    # 8. Return complete analysis
+    # 7. Return complete analysis
     # --------------------------------------------------------
 
     return {
+
+        "resume_only": resume_only,
 
         "overall_match_score": overall_score,
 
@@ -304,7 +321,11 @@ async def analyze_resume(
 
         "resume_skills": resume_skills,
 
-        "job_skills": job_skills,
+        "job_skills": (
+            job_skills
+            if not resume_only
+            else []
+        ),
 
         "matched_skills":
             skill_result["matched_skills"],
