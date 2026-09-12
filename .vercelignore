@@ -1,0 +1,10 @@
+.venv/
+venv/
+.venv312/
+.idea/
+__pycache__/
+*.py[cod]
+uploads/
+*.log
+*.pdf
+.git/

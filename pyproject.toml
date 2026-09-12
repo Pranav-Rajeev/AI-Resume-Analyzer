@@ -1,2 +1,16 @@
+[project]
+name = "ai-resume-analyzer"
+version = "1.0.0"
+description = "AI-powered Resume Analyzer and Job Matcher"
+requires-python = ">=3.12"
+dependencies = [
+    "fastapi==0.141.1",
+    "fastembed==0.8.0",
+    "numpy==2.5.2",
+    "pymupdf==1.28.2",
+    "python-multipart==0.0.32",
+    "uvicorn==0.52.4",
+]
+
 [tool.vercel]
 entrypoint = "app.main:app"
