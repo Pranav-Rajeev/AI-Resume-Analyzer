@@ -279,6 +279,29 @@
 
         .action-row { display: flex; gap: 12px; margin-top: 22px; }
 
+        /* ===== JOB DESCRIPTION FIELD ===== */
+        .field-label {
+            display: flex; align-items: center; gap: 8px;
+            font-size: 13px; font-weight: 800; margin-bottom: 8px;
+        }
+        .field-label svg { width: 15px; height: 15px; color: var(--primary); }
+        .field-label .opt {
+            font-size: 11px; font-weight: 700; color: var(--text-muted);
+            background: var(--surface-2); border: 1px solid var(--border);
+            padding: 2px 8px; border-radius: 999px;
+        }
+        .field-input {
+            width: 100%; min-height: 150px; resize: vertical;
+            font-family: inherit; font-size: 14px; line-height: 1.55;
+            padding: 14px 16px; border-radius: var(--radius-md);
+            background: var(--surface-2); color: var(--text);
+            border: 1px solid var(--border);
+            transition: border-color 0.2s, box-shadow 0.2s, background 0.2s;
+        }
+        .field-input:focus { outline: none; border-color: var(--primary); box-shadow: var(--ring); background: var(--surface); }
+        .field-input::placeholder { color: var(--text-muted); }
+        .field-hint { font-size: 12.5px; color: var(--text-muted); margin-top: 8px; }
+
         /* ===== PROGRESS ===== */
         .progress { display: none; margin-top: 24px; }
         .progress.open { display: block; animation: fadeUp 0.4s ease; }
@@ -595,7 +618,7 @@
                         </span>
                         <div>
                             <h2>Resume Analyzer</h2>
-                            <div class="sub">Upload a PDF resume to run the AI analysis.</div>
+                            <div class="sub">Upload a PDF resume, optionally paste a job description, and run the AI analysis.</div>
                         </div>
                     </div>
 
@@ -622,6 +645,16 @@
                                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M18 6L6 18M6 6l12 12"/></svg>
                                 </button>
                             </div>
+                        </div>
+
+                        <div>
+                            <label class="field-label" for="jobDescInput">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6"/><path d="M16 13H8m0 4h8m-5-8H8"/></svg>
+                                Job description
+                                <span class="opt">Optional</span>
+                            </label>
+                            <textarea class="field-input" id="jobDescInput" placeholder="Paste the job posting here to match your resume against the role. Leave empty for a resume-only ATS analysis."></textarea>
+                            <div class="field-hint">Matching against a description unlocks skill coverage, semantic match &amp; role-specific tips.</div>
                         </div>
 
                     </div>
@@ -985,6 +1018,8 @@
 
                 const ad = new FormData();
                 ad.append("resume_text", resumeText);
+                const jd = $("jobDescInput") ? $("jobDescInput").value.trim() : "";
+                if (jd) ad.append("job_description", jd);
                 await animateProgress(24, 58, "Extracting skills & analyzing content…", 900);
 
                 const [analyzeRes, atsRes] = await Promise.all([
@@ -1253,6 +1288,7 @@
             state.analyzing = false;
             state.file = null;
             fileInput.value = "";
+            $("jobDescInput").value = "";
             $("fileCard").style.display = "none";
             dropzone.classList.remove("error", "dragover");
 
