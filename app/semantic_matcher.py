@@ -1,31 +1,32 @@
-from sentence_transformers import SentenceTransformer
-from sklearn.metrics.pairwise import cosine_similarity
+import numpy as np
+from fastembed import TextEmbedding
 
 
-# Load the AI model
-model = SentenceTransformer("all-MiniLM-L6-v2")
+model = TextEmbedding("sentence-transformers/all-MiniLM-L6-v2")
 
 
 def calculate_semantic_similarity(resume_text, job_description):
 
-    # Convert resume and job description into embeddings
-    resume_embedding = model.encode(
-        resume_text,
-        convert_to_numpy=True
+    vectors = list(
+        model.embed([
+            resume_text,
+            job_description
+        ])
     )
 
-    job_embedding = model.encode(
-        job_description,
-        convert_to_numpy=True
+    resume_embedding = vectors[0]
+    job_embedding = vectors[1]
+
+    similarity = float(
+        np.dot(
+            resume_embedding,
+            job_embedding
+        ) / (
+            np.linalg.norm(resume_embedding) *
+            np.linalg.norm(job_embedding)
+        )
     )
 
-    # Calculate similarity
-    similarity = cosine_similarity(
-        [resume_embedding],
-        [job_embedding]
-    )[0][0]
-
-    # Convert similarity to percentage
     score = similarity * 100
 
-    return round(float(score), 2)
+    return round(score, 2)

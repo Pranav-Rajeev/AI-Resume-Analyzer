@@ -608,7 +608,7 @@
                                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M17 8l-5-5-5 5M12 3v12"/></svg>
                                 </div>
                                 <div class="dz-title">Drop your resume here</div>
-                                <div class="dz-hint">or <span class="dz-strong">browse files</span> — PDF only, max 10 MB</div>
+                                <div class="dz-hint">or <span class="dz-strong">browse files</span> — PDF only, max 4 MB</div>
                             </div>
                             <div id="fileCard" class="file-card" style="display:none;">
                                 <span class="file-icon">
@@ -844,7 +844,7 @@
         function validateFile(file) {
             if (!file) return "No file selected.";
             if (!file.name.toLowerCase().endsWith(".pdf")) return "Only PDF files are supported.";
-            if (file.size > 10 * 1024 * 1024) return "File is larger than 10 MB.";
+            if (file.size > 4 * 1024 * 1024) return "File is larger than 4 MB.";
             return null;
         }
 

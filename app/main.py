@@ -1,9 +1,6 @@
 from fastapi import FastAPI, UploadFile, File, Form
 from fastapi.responses import FileResponse
 
-import shutil
-import os
-
 from app.resume_parser import extract_text_from_pdf
 from app.skill_extractor import extract_skills
 from app.matcher import calculate_match
@@ -66,37 +63,15 @@ async def upload_resume(
         }
 
 
-    # Create uploads folder
+    # Read file into memory
 
-    upload_folder = "uploads"
-
-    if not os.path.exists(upload_folder):
-
-        os.makedirs(upload_folder)
-
-
-    # Create file path
-
-    file_path = os.path.join(
-        upload_folder,
-        file.filename
-    )
-
-
-    # Save uploaded file
-
-    with open(file_path, "wb") as buffer:
-
-        shutil.copyfileobj(
-            file.file,
-            buffer
-        )
+    data = await file.read()
 
 
     # Extract text from PDF
 
     resume_text = extract_text_from_pdf(
-        file_path
+        data
     )
 
 
